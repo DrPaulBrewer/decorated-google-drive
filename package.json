@@ -1,11 +1,11 @@
 {
   "name": "decorated-google-drive",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "decorate googleapi's Google Drive[tm] client with some useful extensions",
   "main": "index.js",
   "scripts": {
-      "test": "node_modules/.bin/mocha --reporter spec --slow 50 --timeout 60000 > testResults.txt; cat testResults.txt",
-      "lint": "jshint index.js; jshint test/index.js"
+    "test": "node_modules/.bin/mocha --reporter spec --slow 50 --timeout 60000 > testResults.txt; cat testResults.txt",
+    "lint": "jshint index.js; jshint test/index.js"
   },
   "repository": {
     "type": "git",
