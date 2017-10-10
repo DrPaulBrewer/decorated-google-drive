@@ -1,0 +1,33 @@
+{
+  "name": "decorated-google-drive",
+  "version": "0.1.0",
+  "description": "decorate googleapi's Google Drive[tm] client with some useful extensions",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DrPaulBrewer/decorated-google-drive.git"
+  },
+  "keywords": [
+    "google-drive",
+    "upload",
+    "download",
+    "path"
+  ],
+  "author": "drpaulbrewer@eaftc.com",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/DrPaulBrewer/decorated-google-drive/issues"
+  },
+  "homepage": "https://github.com/DrPaulBrewer/decorated-google-drive#readme",
+  "devDependencies": {
+    "googleapis": "^22.2.0",
+    "request": "^2.83.0"
+  },
+  "dependencies": {
+    "p-reduce": "^1.0.0",
+    "pify": "^3.0.0"
+  }
+}
