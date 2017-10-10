@@ -3,4 +3,6 @@ coverage
 *.log
 *~
 test.json
+test.keys
 test/test.json
+test/test.keys

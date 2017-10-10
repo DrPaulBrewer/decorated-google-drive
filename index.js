@@ -1,3 +1,6 @@
+// Copyright 2017 Paul Brewer - Economic and Financial Technology Consulting LLC <drpaulbrewer@eaftc.com>
+// License: MIT
+
 // jshint esversion:6, strict:global, node:true
 
 "use strict";
@@ -78,13 +81,14 @@ function extensions(drive, request){
 	    return pify(drive.files.delete)({fileId: file.id});
 	}
 	return function(files){
-	    if (Array.isArray(files))
+	    if (files && files.id) files = [files];
+	    if ((Array.isArray(files)) && (files.length>0))
 		return (Promise
 			.all(files.map(deleteFile))
 			.then(()=>(returnVal))
 		       );
 	    else
-		return Promise.resolve();
+		return Promise.resolve(returnVal);
 	};
     }
 
@@ -172,7 +176,7 @@ function extensions(drive, request){
 
     x.reader = driveReader;
 
-    function driveDownloader( rootFolderId){
+    function driveDownloader(rootFolderId){
 	const spaces = (rootFolderId === 'appDataFolder')? rootFolderId : 'drive';
 	const reader = driveReader( spaces);
 	return function(path){
@@ -255,7 +259,15 @@ function extensions(drive, request){
 		return new Promise(function(resolve,reject){
 		    const uploadRequest = request(driveupload, (err, httpIncomingMessage, response)=>{
 			if (err) return reject(err);
-			resolve(response);
+			let result;
+			if (typeof(response)==='string'){
+			    try {
+				result = JSON.parse(response);
+			    } catch(err){ result = response; }
+			} else {
+			    result = response;
+			}
+			resolve(result);
 		    });
 		    localStream.pipe(uploadRequest);
 		});
@@ -288,7 +300,8 @@ function extensions(drive, request){
 	const findAll = driveFileFinder( null, true);
 	const getFolder = (createPath)? driveCreatePath( rootFolderId, folderPath): driveFindPath( rootFolderId, folderPath);
 	function go(parent){
-	    const pUploadUrl = driveUploadDirector( parent);
+	    if (parent===undefined) throw new Error("in upload2: go, parent is undefined");
+	    const pUploadUrl = driveUploadDirector(parent);
 	    return (
 		pUploadUrl({name, mimeType})
 		    .then(streamToUrl(stream, mimeType))
@@ -304,9 +317,11 @@ function extensions(drive, request){
 		       );
 
 	if (clobber){
+	    const janitor = driveJanitor();
 	    return (common
-		    .then(driveJanitor(c.parent))
-		    .then(go)
+		    .catch((e)=>{ if (e===404) return Promise.resolve([]); return Promise.reject(e); })
+		    .then(janitor)
+		    .then(()=>{return go(c.parent);})
 		   );		
 	}
 	

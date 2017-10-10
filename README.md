@@ -114,7 +114,14 @@ Initialize googleapi's Google Drive[tm] client, decorated with some useful 3rd p
 	// clobber, boolean, must be true to replace an existing file, in which case all files matching folderPath+name will be deleted.
 	// clobber = false/undefined will reject when the file exists with Error("drive.x.upload2: file exists and clobber not set")
 	// on success, resolves to metadata of newly uploaded file
-	
+
+## Tests
+
+I'm going to try to stay sane and not post a set of encrypted API keys and tokens to get a green "build passing" badge.
+
+Instead, you can read my test results in [testResults.txt](./testResults.txt), and/or set up your own testing.  
+
+Current tests are nowhere near complete, but do demonstrate some basic functionality. From using this over a period of hours, access tokens are being refreshed automatically.
 
 ## License: MIT
 
