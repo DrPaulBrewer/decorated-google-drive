@@ -52,7 +52,7 @@ describe('decorated-google-drive:', function(){
 	    });
 	});
     });
-    describe(' drive.x.upload2: upload a string to appDataFolder ', function(){
+    describe(' drive.x.appDataFolder.upload2: upload a string to appDataFolder ', function(){
 	let uploadResult;
 	before(function(){
 	    return drive.x.appDataFolder.upload2({
@@ -77,7 +77,7 @@ describe('decorated-google-drive:', function(){
 		found.files[0].id.should.equal(uploadResult.id);
 	    });
 	});
-	it("file should have contents Hello-World-Test-1-2-3", function(){
+	it("drive.x.appDataFolder.contents should resolve to contents Hello-World-Test-1-2-3", function(){
 	    drive.x.appDataFolder.contents(uploadResult.id).then((contents)=>{
 		contents.should.be.type("string");
 		contents.should.equal('Hello-World-Test-1-2-3');
@@ -113,7 +113,7 @@ describe('decorated-google-drive:', function(){
 		info.mimeType.should.equal("text/plain");
 	    });
 	});
-	it('checking existence on wrong path should throw 404', function(){
+	it('checking existence on wrong path should throw Boom.notfound', function(){
 	    // note: folder names seem to ignore upper/lower case
 	    return drive.x.findPath("/not/the/path/to/test/Files/README.md").then(
 		(info)=>{ console.log(info); throw new Error("unexpected success"); },
@@ -126,7 +126,7 @@ describe('decorated-google-drive:', function(){
 		assert.ok(contents.includes("License: MIT"));
 	    });
 	});
-	it("drive.x.upload2 uploading the file again with {clobber:false} will throw an error because file already exists", function(){
+	it("drive.x.upload2 uploading the file again with {clobber:false} will throw Boom.conflict error because file already exists", function(){
 	    return drive.x.upload2({
 		folderPath: '/path/to/test/Files/',
 		name: 'README.md',
@@ -148,7 +148,7 @@ describe('decorated-google-drive:', function(){
 		assert.ok(response.deleted);
 	    });
 	});
-	it('drive.x.findPath will throw 404 if the file was successfully deleted', function(){
+	it('drive.x.findPath will throw Boom.notFound if the file was successfully deleted', function(){
 	    return drive.x.findPath("/path/to/test/Files/README.md").then(janitor).then(
 		(response)=>{ throw new Error("unexpected success");},
 		(e)=>{ if (e.isBoom && e.typeof===Boom.notFound) return Promise.resolve("ok"); throw e; }
