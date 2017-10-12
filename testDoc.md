@@ -2,7 +2,7 @@
    - [decorated-google-drive:](#decorated-google-drive)
      - [ initializing ](#decorated-google-drive-initializing-)
      - [ drive.x.aboutMe ](#decorated-google-drive-drivexaboutme-)
-     - [ drive.x.upload2: upload a string to appDataFolder ](#decorated-google-drive-drivexupload2-upload-a-string-to-appdatafolder-)
+     - [ drive.x.appDataFolder.upload2: upload a string to appDataFolder ](#decorated-google-drive-drivexappdatafolderupload2-upload-a-string-to-appdatafolder-)
      - [ drive.x.upload2: upload a file README.md to Drive folder /path/to/test/Files](#decorated-google-drive-drivexupload2-upload-a-file-readmemd-to-drive-folder-pathtotestfiles)
      - [ after drive.x.upload2 ](#decorated-google-drive-after-drivexupload2-)
      - [ cleanup via drive.x.janitor ](#decorated-google-drive-cleanup-via-drivexjanitor-)
@@ -41,8 +41,8 @@ return drive.x.aboutMe().then((info)=>{
     });
 ```
 
-<a name="decorated-google-drive-drivexupload2-upload-a-string-to-appdatafolder-"></a>
-##  drive.x.upload2: upload a string to appDataFolder 
+<a name="decorated-google-drive-drivexappdatafolderupload2-upload-a-string-to-appdatafolder-"></a>
+##  drive.x.appDataFolder.upload2: upload a string to appDataFolder 
 uploading the string to appDataFolder file myaccount should resolve with expected file metadata.
 
 ```js
@@ -62,7 +62,7 @@ drive.x.appDataFolder.searcher({})('appDataFolder','myaccount').then((found)=>{
     });
 ```
 
-file should have contents Hello-World-Test-1-2-3.
+drive.x.appDataFolder.contents should resolve to contents Hello-World-Test-1-2-3.
 
 ```js
 drive.x.appDataFolder.contents(uploadResult.id).then((contents)=>{
@@ -96,7 +96,7 @@ return drive.x.findPath("/path/to/test/Files/README.md").then((info)=>{
     });
 ```
 
-checking existence on wrong path should throw 404.
+checking existence on wrong path should throw Boom.notfound.
 
 ```js
 // note: folder names seem to ignore upper/lower case
@@ -115,7 +115,7 @@ return drive.x.download("/path/to/test/Files/README.md").then((contents)=>{
     });
 ```
 
-drive.x.upload2 uploading the file again with {clobber:false} will throw an error because file already exists.
+drive.x.upload2 uploading the file again with {clobber:false} will throw Boom.conflict error because file already exists.
 
 ```js
 return drive.x.upload2({
@@ -139,7 +139,7 @@ return drive.x.findPath("/path/to/test/Files/README.md").then(janitor).then((res
     });
 ```
 
-drive.x.findPath will throw 404 if the file was successfully deleted.
+drive.x.findPath will throw Boom.notFound if the file was successfully deleted.
 
 ```js
 return drive.x.findPath("/path/to/test/Files/README.md").then(janitor).then(
