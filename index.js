@@ -7,6 +7,7 @@
 
 const pify = require('pify');
 const pReduce = require('p-reduce');
+const Boom = require('boom');
 
 const folderMimeType = 'application/vnd.google-apps.folder';
 
@@ -19,12 +20,15 @@ module.exports = function(googleapis, request, keys, tokens){
     auth.setCredentials(tokens);
     const drive = googleapis.drive({version: 'v3', auth});
     // drive is delivered from googleapis frozen, so we'll refreeze after adding extensions
-    return Object.freeze(Object.assign({}, drive, {x: extensions(drive, request)}));
+    const extras = {};
+    extras.x = extensions(drive, request, 'root', 'drive');
+    extras.x.appDataFolder = extensions(drive, request, 'appDataFolder', 'appDataFolder');
+    return Object.freeze(Object.assign({}, drive, extras));
 };
 
-function extensions(drive, request){
+function extensions(drive, request, rootFolderId, spaces){
     const x = {};
-	
+
     function driveAboutMe(_fields){
 	const fields = _fields || "user,storageQuota";
 	return pify(drive.about.get)({fields});
@@ -32,7 +36,7 @@ function extensions(drive, request){
 
     x.aboutMe = driveAboutMe;
 
-    function driveFileFinder(mimeType, findAll){
+    function driveSearcher({mimeType, limit, unique}){
 	function escape(s){
 	    return "'"+String(s).replace(/'/g, "\\'")+"'";	
 	}
@@ -49,46 +53,60 @@ function extensions(drive, request){
 	    if (parent) search.push(escape(parent)+" in parents");
 	    if (mimeType) search.push("mimeType="+escape(mimeType));
 	    const searchString = search.join(" and ");
+	    if (!limit) limit = 1000;
+	    if (unique) limit = 2;
 	    const params = {
-		spaces: ((parent === 'appDataFolder')? parent : 'drive'),
+		spaces,
 		q: searchString,
-		pageSize: 1000,
+		pageSize: limit,
+		maxResults: limit,
 		orderBy: "folder,name,modifiedTime desc",
 		fields: "files(id,name,mimeType,modifiedTime,size)"
 	    };
 
-	    if (!findAll) params.maxResults = 1;
-	    
 	    // see https://developers.google.com/drive/v3/web/search-parameters
 
 	    return new Promise(function(resolve, reject){
 		drive.files.list(params, function(err, resp){
 		    if (err) return reject(err);
-		    if ((resp.files) && ((resp.files.length)>0)){
-			const result = (findAll)? resp.files: resp.files[0];
-			return resolve(result);
-		    }
-		    reject(404);
+		    const result = { parent, name, mimeType, limit, unique,  isSearchResult: true, files: resp.files };
+		    return resolve(result);
 		});
 	    });
 	};
     }
 
-    x.fileFinder = driveFileFinder;
+    x.searcher = driveSearcher;
 
-    function driveJanitor(returnVal){
+    function checkSearch(searchResult){
+	if (!Array.isArray(searchResult.files))
+	    throw Boom.badRequest(null, { searchResult });
+	if (searchResult.files.length===0)
+	    throw Boom.notFound("file not found", searchResult );
+	if (searchResult.unique && (searchResult.files.length>1))
+	    throw Boom.expectationFailed("expected unique file", searchResult );
+	if (searchResult.files.length===searchResult.files.limit)
+	    throw Boom.entityTooLarge('increase limit or too many files found', searchResult);
+	searchResult.ok = true;
+	return searchResult;
+    }
+
+    x.checkSearch = checkSearch;
+
+    function driveJanitor(fileListProperty, successProperty){
 	function deleteFile(file){
 	    return pify(drive.files.delete)({fileId: file.id});
 	}
-	return function(files){
+	return function(info){
+	    if (successProperty) info[successProperty] = false;
+	    let files = (fileListProperty)? info[fileListProperty] : info;
 	    if (files && files.id) files = [files];
 	    if ((Array.isArray(files)) && (files.length>0))
 		return (Promise
 			.all(files.map(deleteFile))
-			.then(()=>(returnVal))
+			.then(()=>{ if (successProperty) info[successProperty] = true; return info; })
 		       );
-	    else
-		return Promise.resolve(returnVal);
+	    return Promise.resolve(info);
 	};
     }
 
@@ -100,22 +118,23 @@ function extensions(drive, request){
 	    if (folderIdOrObject.id){
 		if (folderIdOrObject.mimeType===folderMimeType)
 		    return Promise.resolve(folderIdOrObject.id);
-		else
-		    return Promise.reject("getFolderId: folderIdOrObject is not a folder: unexpected mimeType "+folderIdOrObject.mimeType);
 	    }
-	} else if (typeof(folderIdOrObject)==='string'){
+	}
+	if (typeof(folderIdOrObject)==='string'){
 	    return Promise.resolve(folderIdOrObject);
 	}
-	return Promise.reject(new Error("getFolderId: folderIdOrObject must be a string containing the folder id or an object representing a Google Drive folder"));
+	return Promise.reject(Boom.badRequest(null, {folder: folderIdOrObject}));
     }
-
+	
     x.getFolderId = getFolderId;
     
     function driveStepRight(){
-	const finder = driveFileFinder();
+	const search = driveSearcher({unique: true});
 	return function(folderIdOrObject, name){
 	    return (getFolderId(folderIdOrObject)
-		    .then((parentId)=>(finder(parentId,name)))
+		    .then((parentId)=>(search(parentId,name)))
+		    .then(checkSearch)
+		    .then((searchResult)=>(searchResult.files[0]))
 		   );
 	};
     }
@@ -136,7 +155,7 @@ function extensions(drive, request){
 			};
 			return pify(drive.files.create)({
 			    resource: metadata,
-			    fields: 'id, mimeType'
+			    fields: 'id, mimeType, name'
 			});
 		    })
 		   );
@@ -151,7 +170,7 @@ function extensions(drive, request){
 	return function(f, name){
 	    return (stepper(f,name)
 		.catch((e)=>{
-		    if (e===404) return creator(f,name);
+		    if ((e.isBoom) && (e.typeof===Boom.notFound)) return creator(f,name);
 		    else return Promise.reject(e);
 		})
 		    );
@@ -160,7 +179,7 @@ function extensions(drive, request){
 
     x.folderFactory = driveFolderFactory;
     
-    function driveFindPath( rootFolderId, path){
+    function driveFindPath(path){
 	const parts = path.split('/').filter((s)=>(s.length>0));
 	const stepper = driveStepRight();
 	return pReduce(parts, stepper, rootFolderId);
@@ -168,28 +187,28 @@ function extensions(drive, request){
 
     x.findPath = driveFindPath;
 
-    function driveReader( spaces){
-	return function(fileId){
-	    return pify(drive.files.get)({ fileId, spaces, alt: 'media' });
-	};
+    function driveContents(fileId, mimeType){
+	const getFile = pify(drive.files.get)({ fileId, spaces, alt: 'media' });
+	if (!mimeType)
+	    return getFile;
+	return (getFile
+		.catch( (e)=>{
+		    if (e.toString().includes("Use Export"))
+			return (pify(drive.files.export)({ fileId, spaces, mimeType }));
+		    throw e;
+		})
+		    );
     }
 
-    x.reader = driveReader;
+    x.contents = driveContents;
 
-    function driveDownloader(rootFolderId){
-	const spaces = (rootFolderId === 'appDataFolder')? rootFolderId : 'drive';
-	const reader = driveReader( spaces);
-	return function(path){
-	    return (
-		driveFindPath( rootFolderId, path)
-		    .then((file)=>(reader(file.id)))
-	    );
-	};
+    function driveDownload(path, mimeType){
+	return driveFindPath(path).then((file)=>(driveContents(file.id, mimeType)));
     }
 
-    x.downloader = driveDownloader;
+    x.download = driveDownload;
 
-    function driveCreatePath( rootFolderId, path){
+    function driveCreatePath(path){
 	const parts = path.split('/').filter((s)=>(s.length>0));
 	const dff = driveFolderFactory();
 	return pReduce(parts, dff, rootFolderId);
@@ -215,18 +234,13 @@ function extensions(drive, request){
 
     // for url override see end of http://google.github.io/google-api-nodejs-client/22.2.0/index.html
 
-    function driveUploadDirector( parentFolderOrId){
+    function driveUploadDirector(parentFolderOrId){
 	return function(metadata){
-	    if (parentFolderOrId==='appDataFolder'){
-		metadata.spaces = 'appDataFolder';
-	    } else {
-		metadata.spaces = 'drive';
-	    }
 	    return (
 		getFolderId(parentFolderOrId)
 		    .then((parent)=>{
 			return new Promise(function(resolve, reject){
-			    const meta = Object.assign({}, metadata, {parents: [parent]});
+			    const meta = Object.assign({}, metadata, {parents: [parent], spaces});
 			    const req = drive.files.create({
 				resource: meta
 			    },{
@@ -272,7 +286,7 @@ function extensions(drive, request){
 		    localStream.pipe(uploadRequest);
 		});
 	    }
-	    return Promise.reject("drive.x.streamToUrl: not a valid url");
+	    return Promise.reject("drive.x.streamToUrl: not a valid https url");
 	};
     }
 
@@ -288,19 +302,18 @@ function extensions(drive, request){
 
     x.checkDuplicates = checkDuplicates;
 
-    function streamToDrive({ rootFolderId, folderPath, name, stream, mimeType, createPath, clobber}){
-	function requireString(v, k){
-	    if ((typeof(v)!=='string') || (v.length===0))
-		throw new Error("drive.x.upload2, invalid parameter "+k+", requires non-empty string");
+    function upload2({folderPath, name, stream, mimeType, createPath, clobber}){
+	function requireString(v, l, k){
+	    if ((typeof(v)!=='string') || (v.length<l))
+		throw new Error("drive.x.upload2, invalid parameter "+k+", requires string of length at least "+l+" chars");
 	}
-	requireString(rootFolderId, 'rootFolderId');
-	requireString(folderPath, 'folderPath');
-	requireString(name,'name');
-	requireString(mimeType,'mimeType');
-	const findAll = driveFileFinder( null, true);
-	const getFolder = (createPath)? driveCreatePath( rootFolderId, folderPath): driveFindPath( rootFolderId, folderPath);
-	function go(parent){
-	    if (parent===undefined) throw new Error("in upload2: go, parent is undefined");
+	requireString(folderPath, 0, 'folderPath');
+	requireString(name,1,'name');
+	requireString(mimeType,1,'mimeType');
+	const findAll = driveSearcher({}); 
+	const getFolder = (createPath)? (driveCreatePath(folderPath)) : (driveFindPath(folderPath));
+	function go({parent}){
+	    if (parent===undefined) throw new Error("in drive.x.upload2: go, parent is undefined");
 	    const pUploadUrl = driveUploadDirector(parent);
 	    return (
 		pUploadUrl({name, mimeType})
@@ -308,30 +321,30 @@ function extensions(drive, request){
 			);
 	}
 
-	const c = {}; // cache for parent
-	
 	const common = (getFolder
 			.then(getFolderId)
-			.then((parent)=>{ c.parent = parent; return parent; })
 			.then((parent)=>(findAll(parent,name)))
 		       );
 
 	if (clobber){
-	    const janitor = driveJanitor();
+	    const janitor = driveJanitor('files');
 	    return (common
-		    .catch((e)=>{ if (e===404) return Promise.resolve([]); return Promise.reject(e); })
 		    .then(janitor)
-		    .then(()=>{return go(c.parent);})
+		    .then(go)
 		   );		
 	}
 	
 	return (common
-		.then(()=>(Promise.reject(new Error("drive.x.upload2: file exists and clobber not set"))),
-		      (e)=>{ return ((e===404)? go(c.parent) : Promise.reject(e)); })
+		.then(({parent, files})=>{
+		    if (files.length>0)
+			throw Boom.conflict('file exists');
+		    go({parent});
+		})
 	       );
     }
+    
 
-    x.upload2 = streamToDrive;
+    x.upload2 = upload2;
 
     return x;
 }

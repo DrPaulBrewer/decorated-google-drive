@@ -5,7 +5,9 @@
   "main": "index.js",
   "scripts": {
     "test": "node_modules/.bin/mocha --reporter spec --slow 50 --timeout 60000 > testResults.txt; cat testResults.txt",
-    "lint": "jshint index.js; jshint test/index.js"
+    "md": "node_modules/.bin/mocha --reporter markdown --slow 50 --timeout 60000 > testDoc.md",
+    "lint": "jshint index.js; jshint test/index.js",
+    "go": "npm run lint && npm run test && npm run md"
   },
   "repository": {
     "type": "git",
@@ -28,9 +30,11 @@
     "googleapis": "^22.2.0",
     "mocha": "^4.0.1",
     "request": "^2.83.0",
-    "should": "^13.1.1"
+    "should": "^13.1.1",
+    "string-to-stream": "^1.1.0"
   },
   "dependencies": {
+    "boom": "^6.0.0",
     "p-reduce": "^1.0.0",
     "pify": "^3.0.0"
   }

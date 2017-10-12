@@ -2,7 +2,14 @@
 
 Initialize googleapi's Google Drive[tm] client, decorated with some useful 3rd party extensions.
 
-## Summary
+## Usage
+
+### Initialize
+
+Pass the googleapis and request modules, and your keys and tokens. The `keys` are obtained from the Google API credentials console.
+
+The `tokens` are obtained when a user "Logs in with Google" in your app.  There is various middleware for "Log in with Google", such as
+`passport` for `express`, `grant` and `bell` for `hapi`, and even a client-Javascript side library you can get from Google.  
 
     const googleapis = require('googleapis'); // worked with googleapis-22.20
 	const request = require('request'); // worked with request-2.83.0
@@ -19,93 +26,52 @@ Initialize googleapi's Google Drive[tm] client, decorated with some useful 3rd p
 		expiry_time: Date.now()+1000*60*59 // 59 minutes
     };
 	const drive = driveX(googleapis, request, keys, tokens); 
-    
-	// now drive   contains googleapis.drive official library functions, mostly callback based
-	// and drive.x contains 3rd party extension methods that return Promises
-	
-	// what follows is a kind of meta-coding.  For example mimeType:string is not valid JavaScript, but simply tells you mimeType should be a string.
-	// similarly {...} is also not valid JavaScript but is a placeholder for your code.
-	// drive.x.method(param1)(param2) means that drive.x.method(param1) returns a function(param2) 
-	
-	drive.x.aboutMe.then((info)=>{...});
-	// resolves to info.user and info.storageQuota
-	// see https://developers.google.com/drive/v3/reference/about#resource
-	
-	drive.x.fileFinder(mimeType:string, findAll:boolean)(parent:FolderObject|FolderIdString, name:String).then((info)=>{...}).catch((e)=>{ if (e===404) {...}; })
-	// finds a file's metadata by name and parent, and optionally by mimeType.  reolves to all such files metadata if findAll is true.
-	// throws the number 404 if no files are found
-	// resolves to an object containing file metadata: id, name, mimeType, modifiedTime, size
-	
-	drive.x.janitor(returnVal)(file:Object).then((info)=>{...});
-	// deletes the file (permanently, not trash) referenced by file.id 
-	// resolves to returnVal
-	
-	drive.x.getFolderId(folderIdOrObject).then((info)=>{...});
-	// if folderIdOrObject is file metadata for a folder, it resolves to the file.id of the folder
-	// if folderIdOrObject is file metadata for a non-folder file, it rejects with an error
-	// if folderIdOrObject is a string, it resolves to the string
-	
-	drive.x.stepRight()(folderIdOrObject, name).then((info)=>{...});
-	// a version of drive.x.fileFinder with fewer options; used with p-reduce to make drive.x.findPath
-	
-	drive.x.driveFolderCreator()(parentFolderIdOrObject, name).then((info)=>{...});
-	// NOTE: see below, you probably want drive.x.folderFactory or drive.x.createPath instead 
-	// creates a new folder with name inside the parent
-	// issue: be careful. does not currently de-duplicate (Google Drive allows multiple files and folders with the same name)
-	// resolves to file metadata id, mimeType for the folder
 
-	drive.x.folderFactory()(parentFolderIdOrObject, name).then((info)=>{...});
-	// creates folders only if they do not exist
-	// resolves to the metadata of the folder in parent irregardless of pre-existing/new status
+Now:
+* `drive` contains a googleapis.drive official client
+* `drive.x` contains 3rd part extension methods for accessing Google Drive, providing path resolution, search, testing search result existence/uniqueness, and resumable upload.
+* `drive.x.appDataFolder` contains the same extension methods as `drive.x`, but set up to access the hidden appDataFolder
+
+All extensions are written in terms of calls to `googleapis.drive`, it is simply that some of the techniques are tedious or less than obvious,
+and so it is useful to repackage these as extensions.
+
+The original drive client uses callbacks.  The `drive.x` extensions return Promises.
+
+### Verify tokens
+
+One way to verify tokens is to get the profile of the current user.  
+
+The Google Drive REST API `/about` is much shorter than the Google Plus Profile.  The reduced information is sufficient and may be privacy-enhancing
+compared with public Google Plus profiles. Here is code to fetch the logged in user's email address.  
+
+	drive.x.aboutMe.then((info)=>(info.user.emailAddress)).then({...})
 	
-	drive.x.findPath(rootFolderId, path).then((info)=>{...})
-	// rootFolderId should be 'root' (normal Drive files) or 'appDataFolder' (secret Drive files private to your app)
-	// path looks like a filesystem path.  (Hooray!)  e.g. '/saved/Oct-01-2017-3pm/data.csv'
-	// resolves to an object containing file metadata: id, name, mimeType, modifiedTime, size
-	// no such file rejects with e===404
-	
-	drive.x.reader(spaces)(fileId).then((contents)=>{...})
-	// note: you probably want drive.x.downloader instead
-	// spaces:string, required, is either 'drive' or 'appDataFolder'
-	// file reader/downloader, requires fileId = file.id from file metadata
-	// resolves to file contents
-	// can reject 404 if no such file
-	
-	drive.x.downloader(rootFolderId)(path).then((contents)=>{...})
-	// rootFolderId:string, required, should be 'root' or 'appDataFolder'
-	// path is a path-like string, e.g. '/saved/Oct-02-2017-3pm/data.csv'
-	// resolves to file contents
-	// can reject 404 if no such file
-	
-	drive.x.createPath(rootFolderId, path).then((info)=>{...})
-	// rootFolderId:string, required, should be 'root' or 'appDataFolder'
-	// path is a path-like string, e.g. '/saved/Oct-02-2017-3pm' or '/saved/Oct-02-2017-3pm/' (equivalent)
-	// creates folder described at path, creating intermediate folders as necessary
-	// resolves to metadata for new folder or pre-existing folder with same path
-	
-	drive.x.folderFrom(path)
-	// convenience function, returns the /path/to portion of /path/to/file.ext
-	
-	drive.x.nameFrom(path)
-	// convenience function, returns the "file.ext" portion of /path/to/file.ext
-	
-	drive.x.uploadDirector(parentFolderOrId)(metadata).then((uploadURL)=>{...})
-	// Note: You probably want drive.x.upload2 instead, see below
-	// asks Google Drive for an upload URL using the resumable upload API
-	// does NOT check for existence or de-duplicate
-	
-	drive.x.streamToUrl(localStream, mimeType)(URL)
-	// companion function to drive.x.uploadDirector
-	// Note: You probably still want drive.x.upload2 instead. See below.
-	
-	drive.x.checkDuplicates(files)
-	// function to check that the input array files only contains 1 file or throw errors
-	// throws 404 
-	// theows "checkDuplicates: failed, multiple files with same name
-	
-	drive.x.upload2({ rootFolderId, folderPath, name, stream, mimeType, createPath, clobber}).then((info)=>{...})
-	// performs upload of local content from stream to new file in Google Drive
-	// rootFolderId:string, required, should be 'root' or 'appDataFolder'
+Once you have verified that a set of tokens work, you should encrypt them and store them someplace safe, where your app can get them when a user takes an action.
+`access_token` expires, and usually has a time to live of 1 hour.  It is refreshed by `googleapis` using the `refresh_token`.
+
+An obvious place is an encrypted browser cookie.  Of these, the `refresh_token` is only delivered once, the first time a user logs into google and approves your app,
+and is *not delivered on subsequent logins*. If you encrypt it and store it in a database, then your database, along with the keys, becomes a treasure-trove.  You can 
+avoid doing that by either throwing away the `refresh_token` and living with the 1 hour timeouts, or by storing an encrypted copy of the `refresh_token` in the users
+Drive.  The `appDataFolder` is useful for this.  It is a special folder that is stored in the user's Drive for each app, and hidden from the user. The entire `appDataFolder`
+is deleted when a user uninstalls or deletes your app. 
+
+### Store a string in the appDataFolder 
+
+Once initialized, this snippet will store a string in the file `myaccount` in the `appDataFolder`
+    
+	const str = require('string-to-stream');
+	const secrets = 'some-encrypted-string-of-secrets';
+
+    drive.x.appDataFolder.upload2({ 
+	   folderPath: '', 
+	   name: 'myaccount', 
+	   stream: str(secrets), 
+	   mimeType: 'text/plain', 
+	   createPath: false, 
+	   clobber: true
+	   }).then((info)=>{...}).catch((e)=>{...})
+
+    // performs upload of local content from stream to new file in Google Drive
 	// folderPath, a path-like string, e.g. "/path/to/saved-files/"
 	// name, the filename without the path, e.g. "lotsofdata.csv"
 	// stream, a readable stream for the contents to upload, perhaps from fs.createReadStream or string-to-stream
@@ -114,14 +80,20 @@ Initialize googleapi's Google Drive[tm] client, decorated with some useful 3rd p
 	// clobber, boolean, must be true to replace an existing file, in which case all files matching folderPath+name will be deleted.
 	// clobber = false/undefined will reject when the file exists with Error("drive.x.upload2: file exists and clobber not set")
 	// on success, resolves to metadata of newly uploaded file
+	
+### Missing Docs 
 
+drive.x.{findPath, searcher, download, ...}
+
+Read the source. 
+	    
 ## Tests
 
-I'm going to try to stay sane and not post a set of encrypted API keys and tokens to get a green "build passing" badge.
+I'm going to try to stay sane and not post a set of encrypted API keys and tokens to get a green "build passing" travis badge.
 
-Instead, you can read my test results in [testResults.txt](./testResults.txt), and/or set up your own testing.  
+Instead, look in [testResults.txt](./testResults.txt), or set up your own testing.  
 
-Current tests are nowhere near complete, but do demonstrate some basic functionality. From using this over a period of hours, access tokens are being refreshed automatically.
+Current demonstrate some basic functionality. From using this over a period of hours, access tokens are being refreshed automatically.
 
 ## License: MIT
 

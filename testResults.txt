@@ -4,22 +4,26 @@
      initializing 
       ✓ should not throw an error
      drive.x.aboutMe 
-      ✓ should return the test users email address (372ms)
-      ✓ should return a storageQuota object with properties limit, usage (152ms)
-     drive.x.upload2 
+      ✓ should return the test users email address (526ms)
+      ✓ should return a storageQuota object with properties limit, usage (181ms)
+     drive.x.upload2: upload a string to appDataFolder 
+      ✓ uploading the string to appDataFolder file myaccount should resolve with expected file metadata
+      ✓ drive.x.appDataFolder.searcher should report there is exactly one myaccount file in the folder and it should match upload file id
+      ✓ file should have contents Hello-World-Test-1-2-3
+     drive.x.upload2: upload a file README.md to Drive folder /path/to/test/Files
       ✓ uploading the README.md file to /path/to/test/Files/README.md should resolve with expected file metadata
      after drive.x.upload2 
-      ✓ checking existence with drive.x.findPath should yield expected file metadata (1661ms)
-      ✓ checking existence on wrong path should throw 404 (199ms)
-      ✓ downloading content with drive.x.downloader should yield contents string including 'License: MIT' (1397ms)
-      ✓ drive.x.upload2 uploading the file again with {clobber:false} will throw an error because file already exists (1039ms)
+      ✓ checking existence with drive.x.findPath should yield expected file metadata (1071ms)
+      ✓ checking existence on wrong path should throw 404 (187ms)
+      ✓ downloading content with drive.x.download should yield contents string including 'License: MIT' (1223ms)
+      ✓ drive.x.upload2 uploading the file again with {clobber:false} will throw an error because file already exists (1153ms)
      cleanup via drive.x.janitor 
-      ✓ janitor hopefully deletes the README.md file(s) OK and resolve to splendid (1384ms)
-      ✓ drive.x.findPath will throw 404 if the file was successfully deleted (1057ms)
-      ✓ janitor will throw an error if told to delete an invalid file (260ms)
+      ✓ janitor hopefully deletes the README.md file(s) OK and resolves correctly (1510ms)
+      ✓ drive.x.findPath will throw 404 if the file was successfully deleted (1160ms)
+      ✓ janitor will throw an error if told to delete an invalid file (149ms)
       ✓ janitor should not throw an error if given an empty filelist
-      ✓ final cleanup: delete the path folder and check non-existence (1042ms)
+      ✓ final cleanup: delete the path folder and check non-existence (967ms)
 
 
-  13 passing (11s)
+  16 passing (13s)
 

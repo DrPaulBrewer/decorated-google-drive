@@ -7,6 +7,11 @@ To run the tests
 
 You can use [curl](https://stackoverflow.com/a/18260206/103081) and a browser to get the refresh and access tokens for testing.
 
+The tests use these OAuth2 scopes
+
+* `"https://www.googleapis.com/auth/drive"` Create files and read files made by the app.
+* `"https://www.googleapis.com/auth/drive.appfolder"` Use the hidden appDataFolder.
+
 1. set these environment variables
 
 * `GOOGLE_DRIVE_CLIENT_ID`
