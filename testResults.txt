@@ -4,8 +4,8 @@
      initializing 
       ✓ should not throw an error
      drive.x.aboutMe 
-      ✓ should return the test users email address (495ms)
-      ✓ should return a storageQuota object with properties limit, usage (166ms)
+      ✓ should return the test users email address (583ms)
+      ✓ should return a storageQuota object with properties limit, usage (178ms)
      drive.x.appDataFolder.upload2: upload a string to appDataFolder 
       ✓ uploading the string to appDataFolder file myaccount should resolve with expected file metadata
       ✓ drive.x.appDataFolder.searcher should report there is exactly one myaccount file in the folder and it should match upload file id
@@ -13,17 +13,17 @@
      drive.x.upload2: upload a file README.md to Drive folder /path/to/test/Files
       ✓ uploading the README.md file to /path/to/test/Files/README.md should resolve with expected file metadata
      after drive.x.upload2 
-      ✓ checking existence with drive.x.findPath should yield expected file metadata (1041ms)
-      ✓ checking existence on wrong path should throw Boom.notfound (192ms)
-      ✓ downloading content with drive.x.download should yield contents string including 'License: MIT' (1255ms)
-      ✓ drive.x.upload2 uploading the file again with {clobber:false} will throw Boom.conflict error because file already exists (1084ms)
+      ✓ checking existence with drive.x.findPath should yield expected file metadata (1016ms)
+      ✓ checking existence on wrong path should throw Boom.notfound (200ms)
+      ✓ downloading content with drive.x.download should yield contents string including 'License: MIT' (1319ms)
+      ✓ drive.x.upload2 uploading the file again with {clobber:false} will throw Boom.conflict error because file already exists (1026ms)
      cleanup via drive.x.janitor 
-      ✓ janitor hopefully deletes the README.md file(s) OK and resolves correctly (1398ms)
-      ✓ drive.x.findPath will throw Boom.notFound if the file was successfully deleted (1001ms)
-      ✓ janitor will throw an error if told to delete an invalid file (143ms)
+      ✓ janitor hopefully deletes the README.md file(s) OK and resolves correctly (1457ms)
+      ✓ drive.x.findPath will throw Boom.notFound if the file was successfully deleted (1087ms)
+      ✓ janitor will throw an error if told to delete an invalid file (147ms)
       ✓ janitor should not throw an error if given an empty filelist
-      ✓ final cleanup: delete the path folder and check non-existence (942ms)
+      ✓ final cleanup: delete the path folder and check non-existence (974ms)
 
 
-  16 passing (13s)
+  16 passing (14s)
 

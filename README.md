@@ -37,12 +37,19 @@ and so it is useful to repackage these as extensions.
 
 The original drive client uses callbacks.  The `drive.x` extensions return Promises.
 
-### Verify tokens
+### Verifying tokens
+
+When you set up Google Sign-In, successful sign-ins are redirected to your website, which receives a token.  But this could be faked.
+
+How do you know a token is valid? 
 
 One way to verify tokens is to get the profile of the current user.  
 
-The Google Drive REST API `/about` is much shorter than the Google Plus Profile.  The reduced information is sufficient and may be privacy-enhancing
-compared with public Google Plus profiles. Here is code to fetch the logged in user's email address.  
+The Google Drive REST API `/about` is much shorter than the Google Plus Profile.  The reduced information is sufficient for populating simple apps and may be privacy-enhancing
+compared with accessing public Google Plus profiles. Basically, Drive will tell you the user's email address, picture thumbnail, and the capacity and usage of their drive,
+whereas with Google Plus you can everything someone reveals on their public Google Profile. While marketing often favors the latter, privacy favors the former.  
+
+Here is code to fetch the logged in user's email address.  
 
 	drive.x.aboutMe.then((info)=>(info.user.emailAddress)).then({...})
 	
@@ -81,9 +88,93 @@ Once initialized, this snippet will store a string in the file `myaccount` in th
 	// clobber = false/undefined will reject when the file exists with Error("drive.x.upload2: file exists and clobber not set")
 	// on success, resolves to metadata of newly uploaded file
 	
-### Missing Docs 
+### finding Paths with drive.x.findPath
 
-drive.x.{findPath, searcher, download, ...}
+As of Oct 2017, the Google Drive REST API and googleapis.drive nodeJS libraries do not let you directly search for `/work/projectA/2012/Oct/customers/JoeSmith.txt`.  
+
+The search can be done, by either searching for any folder named JoeSmith and hoping there's no duplicates, or by searching the root folder for `/work` then searching `/work` for `projectA`
+and continuing down the chain.  In the library I wrote functional wrappers on `googleapis.drive` so that `findPath` becomes a functional Promise `p-reduce` of an appropriate folder search
+on an array of path components.  But you can simply call `drive.x.findPath` or `drive.x.appDataFolder.findPath` as follows:
+
+    drive.x.findPath('/work/projectA/2012/Oct/customers/JoeSmith.txt').then((fileMetaData)=>{...})
+	
+where `{...}` is your code that needs `fileMetaData`.  The resolved data looks like this:
+
+	{
+	   id:  'dfakf20301241024klaflkafm', // Drive File Id
+	   name: 'JoeSmith.txt',
+	   mimeType: 'text/plain',
+	   modifiedTime: 1507846447000, //  ms since Epoch
+	   size: 21398 // size in Drive, may not equal number of bytes in file
+	}
+
+Additionally, `findPath` can fail with a rejected Promise.  `npm:boom` is used for errors our code throws.  You can also
+get errors thrown by the googleapis code.
+
+To catch file not found:
+
+    .catch( (e)=>{  if (e.isBoom && e.typeof===Boom.notFound) return your_file_not_found_handler(e); throw e; } )
+
+To catch two or more files with same name:
+
+    .catch( (e)=>{  if (e.isBoom && e.typeof===Boom.expectationFailed) return your_duplicate_file_handler(e); throw e; })
+
+### searching folders with drive.x.searcher
+
+In all cases below, `...` should be replaced by your JavaScript code acting on the returned information.
+
+To find all the files in the Drive that you can access, that are not in the trash:
+
+    const findAll = drive.x.searcher({});
+	findAll().then(({files})=>{...})
+	
+To find the files you can access that are in the trash:
+
+	const findTrash = data.x.searcher({trashed: true});
+	findTrash().then(({files})=>{...});
+	
+Notice that `drive.x.searcher` returns a `function`.  That function takes two parameters, a `parent` which is a folder file id and a `name`.
+
+To find the top level files in the root of the Drive that you can access:
+
+    const findAll = drive.x.searcher({});
+	findAll('root').then(({files})=>{...});
+	
+To find zero, one or more files named `kittens.png` in the root of the Drive:
+
+    findAll('root', 'kittens'png').then(({files})=>{...});
+	
+To find zero, one, or more trashed file named `severedhead.png` in any trashed folder in the Drive:
+
+	const findTrash = data.x.searcher({trashed: true});
+    findTrash(null, 'severedHead.png').then(({files})=>{...});
+	
+You can restrict mimeType or require a unique (single) file in the searcher parameters:
+
+    const findTrashedPng = drive.x.searcher({trashed:true, mimeType: 'image/png', unique: true };
+	( findTrashedPng(null, 'severedHead.png')
+	    .then(drive.x.checkSearch)
+		.then(({ files })=>{...})
+		)
+	
+`unique:true` sets `limit:2` so is not in fact unique but instead returns 2 files quickly.  You can enforce uniqueness, thowing Boom errors, by calling
+`drive.x.checkSearch` on the search results.  Successful searches are passed to the next `then()` and searches with missing files or duplicates
+throw errors.  (see `drive.x.findPath` above for a descrption of these Boom errors and how to catch them).
+
+The parent folder can be specified from a drive.x.findPath like this:
+
+Finds the folder "/crime/sprees/murder" and looks for any files in this folder that are .png files, then calls imaginary functions
+`notGuilty()` or `guilty()`.  Here `files` is an array so `files.length` is the number of files found.
+
+    const findAll = drive.x.searcher({ mimeType: 'image/png' });
+    ( drive.x.findPath('/crime/sprees/murder')
+	    .then((folder)=>(findAll(folder.id)))
+		.then( ({files})=>{ if (files.length===0) return notGuilty(); return guilty(); } )
+		.catch( (e)=>{ if (e.isBoom && e.typeof===Boom.notFound) return notGuilty(); throw e; })
+		)
+		
+
+### To Do Doc drive.x.{download, ...}
 
 Read the source. 
 	    

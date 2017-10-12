@@ -36,7 +36,7 @@ function extensions(drive, request, rootFolderId, spaces){
 
     x.aboutMe = driveAboutMe;
 
-    function driveSearcher({mimeType, limit, unique}){
+    function driveSearcher({mimeType, limit, unique, trashed}){
 	function escape(s){
 	    return "'"+String(s).replace(/'/g, "\\'")+"'";	
 	}
@@ -48,7 +48,8 @@ function extensions(drive, request, rootFolderId, spaces){
 	    // look in resp[1].items[0].id
 	    // search string trashed = false name = name and mimeType = mimeType and parent in parents
 
-	    const search = ["trashed=false"];
+	    const search = [];
+	    search.push("trashed="+(!!trashed));
 	    if (name) search.push("name="+escape(name));
 	    if (parent) search.push(escape(parent)+" in parents");
 	    if (mimeType) search.push("mimeType="+escape(mimeType));
