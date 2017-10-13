@@ -12,6 +12,7 @@ const request = require('request');
 const fs = require('fs');
 const str = require('string-to-stream');
 const Boom = require('boom');
+const pify = require('pify');
 
 const keys = {
     key: process.env.GOOGLE_DRIVE_CLIENT_ID,
@@ -49,6 +50,14 @@ describe('decorated-google-drive:', function(){
 		const quota = info.storageQuota;
 		assert.ok(typeof(quota)==='object');
 		quota.should.have.properties('limit','usage');
+	    });
+	});
+	it('drive.about.get still works, as well, and the outputs match', function(){
+	    return Promise.all([
+		drive.x.aboutMe(),
+		pify(drive.about.get)({fields: 'user, storageQuota'})
+	    ]).then(([A,B])=>{
+		A.should.deepEqual(B);
 	    });
 	});
     });

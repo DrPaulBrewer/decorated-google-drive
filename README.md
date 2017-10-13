@@ -64,8 +64,8 @@ is deleted when a user uninstalls or deletes your app.
 
 ### Store a string in the appDataFolder 
 
-Once initialized, this snippet will store a string in the file `myaccount` in the `appDataFolder`
-    
+Once initialized, this snippet will store a string in the file `myaccount` in the `appDataFolder`.
+
 	const str = require('string-to-stream');
 	const secrets = 'some-encrypted-string-of-secrets';
 
@@ -77,7 +77,16 @@ Once initialized, this snippet will store a string in the file `myaccount` in th
 	   createPath: false, 
 	   clobber: true
 	   }).then((newFileMetadata)=>{...}).catch((e)=>{...})
-	
+	   
+upload2 uses a resumable upload.  
+
+A [media upload](https://developers.google.com/drive/v3/web/manage-uploads) using `drive.files.create` directly from the unextended drive googleapi might be quicker for short files up to 5MB.
+
+`drive.files.create` media upload requires having the `folder.Id` of the `parent` folder for the new file, here it is simply `appDataFolder`.  Also setting `spaces` to `appDataFolder` is required.
+
+In `drive.x.appDataFolder.upload2` these steps are included but are used in a 2-step procedure to first request an upload URL, and then do an upload.
+
+
 ### upload a file to the user's Drive via resumable upload
 
 To upload a local file, a stream is required, so call node's `fs.createReadStream('/path/to/local/files')`.
