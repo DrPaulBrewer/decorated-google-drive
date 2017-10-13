@@ -1,6 +1,6 @@
 {
   "name": "decorated-google-drive",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "decorate googleapi's Google Drive[tm] client with some useful extensions",
   "main": "index.js",
   "scripts": {
@@ -34,8 +34,8 @@
     "string-to-stream": "^1.1.0"
   },
   "dependencies": {
-      "boom": "^6.0.0",
-      "pify": "^3.0.0",
-      "p-reduce": "^1.0.0"
+    "boom": "^6.0.0",
+    "pify": "^3.0.0",
+    "p-reduce": "^1.0.0"
   }
 }
