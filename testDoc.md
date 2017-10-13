@@ -41,6 +41,17 @@ return drive.x.aboutMe().then((info)=>{
     });
 ```
 
+drive.about.get still works, as well, and the outputs match.
+
+```js
+return Promise.all([
+	drive.x.aboutMe(),
+	pify(drive.about.get)({fields: 'user, storageQuota'})
+    ]).then(([A,B])=>{
+	A.should.deepEqual(B);
+    });
+```
+
 <a name="decorated-google-drive-drivexappdatafolderupload2-upload-a-string-to-appdatafolder-"></a>
 ##  drive.x.appDataFolder.upload2: upload a string to appDataFolder 
 uploading the string to appDataFolder file myaccount should resolve with expected file metadata.
