@@ -76,17 +76,70 @@ Once initialized, this snippet will store a string in the file `myaccount` in th
 	   mimeType: 'text/plain', 
 	   createPath: false, 
 	   clobber: true
-	   }).then((info)=>{...}).catch((e)=>{...})
+	   }).then((newFileMetadata)=>{...}).catch((e)=>{...})
+	
+### upload a file to the user's Drive via resumable upload
 
-    // performs upload of local content from stream to new file in Google Drive
-	// folderPath, a path-like string, e.g. "/path/to/saved-files/"
-	// name, the filename without the path, e.g. "lotsofdata.csv"
-	// stream, a readable stream for the contents to upload, perhaps from fs.createReadStream or string-to-stream
-	// mimeType, a mimeType like "text/csv" or "application/zip"
-	// createPath, boolean, optional, if true then create missing folders as necessary; otherwise will throw 404 on non-existent path
-	// clobber, boolean, must be true to replace an existing file, in which case all files matching folderPath+name will be deleted.
-	// clobber = false/undefined will reject when the file exists with Error("drive.x.upload2: file exists and clobber not set")
-	// on success, resolves to metadata of newly uploaded file
+To upload a local file, a stream is required, so call node's `fs.createReadStream('/path/to/local/files')`.
+
+To create missing intermediate folders, set `createPath:true`, otherwise it may throw a `Boom.notFound`, which you can catch.
+
+To replace an existing file, set `clobber:true`, otherwise it may throw a `Boom.conflict`, which you can catch.
+
+    drive.x.upload2({
+       folderPath: '/destination/path/on/drive',
+       name: 'mydata.csv',
+       stream: fs.createReadStream('/path/to/local/files/mydata.csv'),
+       mimeType: 'text/csv',
+       createPath: true,
+       clobber: true
+       }).then((newFileMetaData)=>{...}).catch((e)=>{...});
+       
+We haven't expereimented with disrupting the upload and trying to resume it.  It is done in one step and seems to deal
+with 50 Mb zip files ok.
+
+### getting a URL for resumable upload later
+
+If you want to manage the resumable uploads, this creates a 0 byte file and retrieves a resumable upload URL for later use.  
+
+These resumable upload URLs are good for quite a while and seem to be signed URL's that don't require tokens.  [See Drive API Docs:resumable-upload](https://developers.google.com/drive/v3/web/resumable-upload)
+
+If you have `folderMetadata` from, say, `drive.x.findPath`, then you can create a URL-generating function for uploads with
+
+    const getUploadUrlForFile = drive.x.uploadDirector(folderMetadata);
+    
+and then 
+
+    getUploadUrlForFile({name: 'hello.txt', mimeType: 'text/plain'})
+    
+will resolve to some Google uploader URL that you can post to with `npm:request`
+
+### Download a file knowing only the /path/to/file
+
+You can find a file and download it one step with:
+
+    drive.x.download('/path/to/myfile.zip', optional mimeType).then((zipdata)=>{...})
+
+`mimeType` is only useful for Google Docs and Sheets that can be exported to various mimeTypes.
+    
+If the file does not exist, the promise will be rejected with Boom.notFound.
+
+Internally, `drive.x.download` is a Promise chain with `drive.x.findPath` then `drive.x.contents`
+
+### Download a file when you have the fileMetadata
+
+Searching through the chain of folders involves multiple API calls and is slow when you already have the fileMetadata.
+
+Instead get the `file.id` and use drive.x.contents:
+
+     drive.x.contents(fileMetadata.id, optional mimeType).then((content)=>{...});
+     
+`mimeType` is only useful for Google Docs and Sheets that can be exported to various mimeTypes.
+
+Internally, `drive.files.get` with the `media` download option is called.  If the file is a doc or sheet or presentation,
+this will throw an error with the string `Use Export`.  `drive.x.contents` catches that error and calls `drive.files.export`
+requesting the proper `mimeType`.  If you know you need to fetch a Google doc/sheet/presentation, it will be quicker to 
+call `drive.files.export` directly.
 	
 ### finding Paths with drive.x.findPath
 
@@ -173,18 +226,35 @@ Finds the folder "/crime/sprees/murder" and looks for any files in this folder t
 		.catch( (e)=>{ if (e.isBoom && e.typeof===Boom.notFound) return notGuilty(); throw e; })
 		)
 		
+### delete the files you found
 
-### To Do Doc drive.x.{download, ...}
+`drive.x.janitor` returns a function that calls something like `Promise.all(files.map(delete))`.  
 
-Read the source. 
-	    
+The function returned by `drive.x.janitor` is intended to be placed in a `then` and picks out the data it needs and 
+opionally sets a flag if the deletions are successful. The Janitor will not throw an error on an empty search, and
+`drive.x.checkSearch` is not called in the upcoming snippet. However, irregardless, delete could throw an error on some file
+and so a `.catch` is needed to catch the failed cases.  
+
+This could delete all the accessible files with mimeType audio/mpeg
+
+    const mp3search = drive.x.searcher({mimeType:'audio/mpeg'});
+    const Jim = drive.x.janitor('files','deleted');
+    mp3search().then(Jim).catch((e)=>{}); // we're trusting Jim the Janitor to clean up a lot here, he might hit an API limit
+   	    
 ## Tests
 
 I'm going to try to stay sane and not post a set of encrypted API keys and tokens to get a green "build passing" travis badge.
 
 Instead, look in [testResults.txt](./testResults.txt), or set up your own testing.  
 
-Current demonstrate some basic functionality. From using this over a period of hours, access tokens are being refreshed automatically.
+Current tests demonstrate some basic functionality. 
+
+To confirm access tokens are being refreshed automatically, set up and run the tests once.  Wait until the access token
+expires (usually an hour) and run the tests again.  
+
+## Contributing 
+
+Any 
 
 ## License: MIT
 
