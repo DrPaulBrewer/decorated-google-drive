@@ -261,10 +261,6 @@ Current tests demonstrate some basic functionality.
 To confirm access tokens are being refreshed automatically, set up and run the tests once.  Wait until the access token
 expires (usually an hour) and run the tests again.  
 
-## Contributing 
-
-Any 
-
 ## License: MIT
 
 Copyright 2017 Paul Brewer, Economic and Financial Technology Consulting LLC <drpaulbrewer@eaftc.com>
