@@ -8,6 +8,7 @@
 const pify = require('pify');
 const pReduce = require('p-reduce');
 const Boom = require('boom');
+const digestStream = require('digest-stream');
 
 const folderMimeType = 'application/vnd.google-apps.folder';
 
@@ -243,7 +244,8 @@ function extensions(drive, request, rootFolderId, spaces){
 			return new Promise(function(resolve, reject){
 			    const meta = Object.assign({}, metadata, {parents: [parent], spaces});
 			    const req = drive.files.create({
-				resource: meta
+				resource: meta,
+				fields: 'id,name,mimeType,md5Checksum'
 			    },{
 				url: "https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable"
 			    });
@@ -270,8 +272,12 @@ function extensions(drive, request, rootFolderId, spaces){
 			'Content-Type': mimeType
 		    }
 		};
-		// fs.createReadStream(fname).pipe(_request(driveupload)).on('error', (e)=>(console.log(e)));
 		return new Promise(function(resolve,reject){
+		    let md5,length;
+		    const md5buddy = digestStream('md5','hex', function(_md5, _length){
+			md5 = _md5 ;
+			length = _length;
+		    });  
 		    const uploadRequest = request(driveupload, (err, httpIncomingMessage, response)=>{
 			if (err) return reject(err);
 			let result;
@@ -282,9 +288,18 @@ function extensions(drive, request, rootFolderId, spaces){
 			} else {
 			    result = response;
 			}
+			if ((!mimeType) || (!mimeType.startsWith('text'))){
+			    // check md5 only on binary data, and only if reported back by Google Drive API
+			    if ((result && result.md5Checksum)){
+				result.ourMD5 = md5; // set ours here too
+				if (md5 !== result.md5Checksum){
+				    reject(Boom.badImplementation('bad md5 checksum on upload to Google Drive', result));
+				}
+			    }			    
+			}
 			resolve(result);
 		    });
-		    localStream.pipe(uploadRequest);
+		    localStream.pipe(md5buddy).pipe(uploadRequest);
 		});
 	    }
 	    return Promise.reject("drive.x.streamToUrl: not a valid https url");
@@ -314,7 +329,7 @@ function extensions(drive, request, rootFolderId, spaces){
 	const findAll = driveSearcher({}); 
 	const getFolder = (createPath)? (driveCreatePath(folderPath)) : (driveFindPath(folderPath));
 	function go({parent}){
-	    if (parent===undefined) throw new Error("in drive.x.upload2: go, parent is undefined");
+	    if (parent===undefined) throw Boom.badImplementation("parent undefined");
 	    const pUploadUrl = driveUploadDirector(parent);
 	    return (
 		pUploadUrl({name, mimeType})

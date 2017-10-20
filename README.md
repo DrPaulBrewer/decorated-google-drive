@@ -95,6 +95,13 @@ To create missing intermediate folders, set `createPath:true`, otherwise it may 
 
 To replace an existing file, set `clobber:true`, otherwise it may throw a `Boom.conflict`, which you can catch.
 
+Post-upload checksums reported by Google Drive API are used to guarantee fidelity for **binary** file uploads. A binary file
+is any non-text file.  The md5 checksum computed from the file stream is reported as `ourMD5` in the `newFileMetaData`
+and the md5 checksum computed by Google is reported as `md5Checksum` in the `newFileMetaData`.  When there is a mismatch
+on a binary file the code will throw `Boom.badImplementation`, which you can catch, and any recovery should assume that Google
+Drive retains the corrupted upload.
+
+
     drive.x.upload2({
        folderPath: '/destination/path/on/drive',
        name: 'mydata.csv',
@@ -104,7 +111,7 @@ To replace an existing file, set `clobber:true`, otherwise it may throw a `Boom.
        clobber: true
        }).then((newFileMetaData)=>{...}).catch((e)=>{...});
        
-We haven't expereimented with disrupting the upload and trying to resume it.  It is done in one step and seems to deal
+We haven't tried disrupting the upload and then trying to resume it.  It is done in one chunk and seems to deal
 with 50 Mb zip files ok.
 
 ### getting a URL for resumable upload later
@@ -154,9 +161,9 @@ call `drive.files.export` directly.
 
 As of Oct 2017, the Google Drive REST API and googleapis.drive nodeJS libraries do not let you directly search for `/work/projectA/2012/Oct/customers/JoeSmith.txt`.  
 
-The search can be done, by either searching for any folder named JoeSmith and hoping there's no duplicates, or by searching the root folder for `/work` then searching `/work` for `projectA`
+The search can be done, by either searching for any file named JoeSmith.txt and hoping there's no duplicates, or by searching the root folder for `/work` then searching `/work` for `projectA`
 and continuing down the chain.  In the library I wrote functional wrappers on `googleapis.drive` so that `findPath` becomes a functional Promise `p-reduce` of an appropriate folder search
-on an array of path components.  But you can simply call `drive.x.findPath` or `drive.x.appDataFolder.findPath` as follows:
+on an array of path components. Now you can simply call `drive.x.findPath` or `drive.x.appDataFolder.findPath` as follows:
 
     drive.x.findPath('/work/projectA/2012/Oct/customers/JoeSmith.txt').then((fileMetaData)=>{...})
 	

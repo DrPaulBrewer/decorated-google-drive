@@ -146,6 +146,29 @@ describe('decorated-google-drive:', function(){
 	    }).then((info)=>{throw new Error("unexpected success");}, (e)=>{ if(e.isBoom && e.typeof===Boom.conflict) return Promise.resolve('ok'); throw e; });
 	});
     });
+    describe(' drive.x.upload2: upload test/test.zip to Drive folder /path/to/test/Files', function(){
+	let uploadResult;
+	let testMD5 = fs.readFileSync('./test/test.md5','utf8');
+	before(function(){
+	    return drive.x.upload2({
+		folderPath: '/path/to/test/Files/',
+		name: 'test.zip',
+		stream: fs.createReadStream("./test/test.zip"),
+		mimeType: 'application/zip',
+		createPath: true,
+		clobber: true
+	    }).then((info)=>{ uploadResult = info; });
+	});
+	it("uploading the README.md file to /path/to/test/Files/test.zip should resolve with expected file metadata and md5 match", function(){
+	    uploadResult.should.be.type("object");
+	    uploadResult.should.have.properties('id','name','mimeType','md5Checksum','ourMD5');
+	    uploadResult.id.length.should.be.above(1);
+	    uploadResult.name.should.equal("test.zip");
+	    uploadResult.mimeType.should.equal("application/zip");
+	    uploadResult.ourMD5.should.equal(uploadResult.md5Checksum);
+	    uploadResult.ourMD5.should.equal(testMD5);
+	});
+    });
     describe(" cleanup via drive.x.janitor ", function(){
 	let janitor;
 	before(function(){

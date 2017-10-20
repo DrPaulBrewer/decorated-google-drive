@@ -5,6 +5,7 @@
      - [ drive.x.appDataFolder.upload2: upload a string to appDataFolder ](#decorated-google-drive-drivexappdatafolderupload2-upload-a-string-to-appdatafolder-)
      - [ drive.x.upload2: upload a file README.md to Drive folder /path/to/test/Files](#decorated-google-drive-drivexupload2-upload-a-file-readmemd-to-drive-folder-pathtotestfiles)
      - [ after drive.x.upload2 ](#decorated-google-drive-after-drivexupload2-)
+     - [ drive.x.upload2: upload test/test.zip to Drive folder /path/to/test/Files](#decorated-google-drive-drivexupload2-upload-testtestzip-to-drive-folder-pathtotestfiles)
      - [ cleanup via drive.x.janitor ](#decorated-google-drive-cleanup-via-drivexjanitor-)
 <a name=""></a>
  
@@ -137,6 +138,20 @@ return drive.x.upload2({
 	createPath: true,
 	clobber: false
     }).then((info)=>{throw new Error("unexpected success");}, (e)=>{ if(e.isBoom && e.typeof===Boom.conflict) return Promise.resolve('ok'); throw e; });
+```
+
+<a name="decorated-google-drive-drivexupload2-upload-testtestzip-to-drive-folder-pathtotestfiles"></a>
+##  drive.x.upload2: upload test/test.zip to Drive folder /path/to/test/Files
+uploading the README.md file to /path/to/test/Files/test.zip should resolve with expected file metadata and md5 match.
+
+```js
+uploadResult.should.be.type("object");
+    uploadResult.should.have.properties('id','name','mimeType','md5Checksum','ourMD5');
+    uploadResult.id.length.should.be.above(1);
+    uploadResult.name.should.equal("test.zip");
+    uploadResult.mimeType.should.equal("application/zip");
+    uploadResult.ourMD5.should.equal(uploadResult.md5Checksum);
+    uploadResult.ourMD5.should.equal(testMD5);
 ```
 
 <a name="decorated-google-drive-cleanup-via-drivexjanitor-"></a>

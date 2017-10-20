@@ -35,7 +35,8 @@
   },
   "dependencies": {
     "boom": "^6.0.0",
-    "pify": "^3.0.0",
-    "p-reduce": "^1.0.0"
+    "digest-stream": "^2.0.0",
+    "p-reduce": "^1.0.0",
+    "pify": "^3.0.0"
   }
 }
