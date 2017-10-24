@@ -4,9 +4,9 @@
      initializing 
       ✓ should not throw an error
      drive.x.aboutMe 
-      ✓ should return the test users email address (428ms)
-      ✓ should return a storageQuota object with properties limit, usage (142ms)
-      ✓ drive.about.get still works, as well, and the outputs match (142ms)
+      ✓ should return the test users email address (388ms)
+      ✓ should return a storageQuota object with properties limit, usage (135ms)
+      ✓ drive.about.get still works, as well, and the outputs match (257ms)
      drive.x.appDataFolder.upload2: upload a string to appDataFolder 
       ✓ uploading the string to appDataFolder file myaccount should resolve with expected file metadata
       ✓ drive.x.appDataFolder.searcher should report there is exactly one myaccount file in the folder and it should match upload file id
@@ -14,19 +14,19 @@
      drive.x.upload2: upload a file README.md to Drive folder /path/to/test/Files
       ✓ uploading the README.md file to /path/to/test/Files/README.md should resolve with expected file metadata
      after drive.x.upload2 
-      ✓ checking existence with drive.x.findPath should yield expected file metadata (957ms)
-      ✓ checking existence on wrong path should throw Boom.notfound (191ms)
-      ✓ downloading content with drive.x.download should yield contents string including 'License: MIT' (1333ms)
-      ✓ drive.x.upload2 uploading the file again with {clobber:false} will throw Boom.conflict error because file already exists (977ms)
+      ✓ checking existence with drive.x.findPath should yield expected file metadata (1089ms)
+      ✓ checking existence on wrong path should throw Boom.notfound (215ms)
+      ✓ downloading content with drive.x.download should yield contents string including 'License: MIT' (1374ms)
+      ✓ drive.x.upload2 uploading the file again with {clobber:false} will throw Boom.conflict error because file already exists (1176ms)
      drive.x.upload2: upload test/test.zip to Drive folder /path/to/test/Files
       ✓ uploading the README.md file to /path/to/test/Files/test.zip should resolve with expected file metadata and md5 match
      cleanup via drive.x.janitor 
-      ✓ janitor hopefully deletes the README.md file(s) OK and resolves correctly (1380ms)
-      ✓ drive.x.findPath will throw Boom.notFound if the file was successfully deleted (1104ms)
-      ✓ janitor will throw an error if told to delete an invalid file (137ms)
+      ✓ janitor hopefully deletes the README.md file(s) OK and resolves correctly (1614ms)
+      ✓ drive.x.findPath will throw Boom.notFound if the file was successfully deleted (1181ms)
+      ✓ janitor will throw an error if told to delete an invalid file (149ms)
       ✓ janitor should not throw an error if given an empty filelist
-      ✓ final cleanup: delete the path folder and check non-existence (900ms)
+      ✓ final cleanup: delete the path folder and check non-existence (1184ms)
 
 
-  18 passing (15s)
+  18 passing (16s)
 

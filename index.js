@@ -15,17 +15,24 @@ const folderMimeType = 'application/vnd.google-apps.folder';
 // googleapis = require('googleapis')
 // request = require('request')
 
-module.exports = function(googleapis, request, keys, tokens){
+function decoratedGoogleDrive(googleapis, request, keys, tokens){
     const OAuth2 = googleapis.auth.OAuth2;
     const auth = new OAuth2(keys.key, keys.secret, keys.redirect);
     auth.setCredentials(tokens);
     const drive = googleapis.drive({version: 'v3', auth});
+    return decorate(drive, request);
+}
+
+function decorate(drive, request){
     // drive is delivered from googleapis frozen, so we'll refreeze after adding extensions
     const extras = {};
     extras.x = extensions(drive, request, 'root', 'drive');
     extras.x.appDataFolder = extensions(drive, request, 'appDataFolder', 'appDataFolder');
     return Object.freeze(Object.assign({}, drive, extras));
-};
+}
+
+decoratedGoogleDrive.decorate = decorate;
+module.exports = decoratedGoogleDrive;
 
 function extensions(drive, request, rootFolderId, spaces){
     const x = {};

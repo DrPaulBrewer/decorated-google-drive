@@ -4,6 +4,14 @@ Initialize googleapi's Google Drive[tm] client, decorated with some useful 3rd p
 
 ## Usage
 
+### Install
+
+Pre-requisites are `googleapis` and `request`
+
+    npm i googleapis -S
+	npm i request -S
+	npm i decorated-google-drive -S
+
 ### Initialize
 
 Pass the googleapis and request modules, and your keys and tokens. The `keys` are obtained from the Google API credentials console.
@@ -36,6 +44,16 @@ All extensions are written in terms of calls to `googleapis.drive`, it is simply
 and so it is useful to repackage these as extensions.
 
 The original drive client uses callbacks.  The `drive.x` extensions return Promises.
+
+### Decorate an existing vanilla googleapis.drive instance
+
+This should work in cases where `drive` already exists and has credentials.
+
+	 const request = require('request');
+	 const driveX = require('decorated-google-drive');
+	 const ddrive = driveX.decorate(drive, request);
+	 
+Now the extensions are available in `ddrive.x` and `ddrive.x.appDataFolder`
 
 ### Verifying tokens
 
