@@ -1,6 +1,6 @@
 # decorated-google-drive
 
-Initialize googleapi's Google Drive[tm] client, decorated with some useful 3rd party extensions.
+Initialize googleapi's Google Drive[tm] nodejs client, decorated with some useful 3rd party extensions.
 
 ## Usage
 
