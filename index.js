@@ -9,6 +9,7 @@ const pify = require('pify');
 const pReduce = require('p-reduce');
 const Boom = require('boom');
 const digestStream = require('digest-stream');
+const ssgd = require('search-string-for-google-drive');
 
 const folderMimeType = 'application/vnd.google-apps.folder';
 
@@ -44,33 +45,24 @@ function extensions(drive, request, rootFolderId, spaces){
 
     x.aboutMe = driveAboutMe;
 
-    function driveSearcher({mimeType, limit, unique, trashed}){
-	function escape(s){
-	    return "'"+String(s).replace(/'/g, "\\'")+"'";	
-	}
+    function driveSearcher(options){
+	var limit = ( options.limit || 1000 );
+	const unique = options.unique;
+	if (unique) limit = 2;
+	const allowMatchAllFiles = options.allowMatchAllFiles;
+	const fields = options.fields || 'id,name,mimeType,modifiedTime,size'; 
+	const searchTerms = ssgd.extract(options);
+	
 	return function(parent, name){
-
-	    // Drive API: files
-	    //   maxResults 1
-	    //   spaces 'drive'
-	    // look in resp[1].items[0].id
-	    // search string trashed = false name = name and mimeType = mimeType and parent in parents
-
-	    const search = [];
-	    search.push("trashed="+(!!trashed));
-	    if (name) search.push("name="+escape(name));
-	    if (parent) search.push(escape(parent)+" in parents");
-	    if (mimeType) search.push("mimeType="+escape(mimeType));
-	    const searchString = search.join(" and ");
-	    if (!limit) limit = 1000;
-	    if (unique) limit = 2;
+	    const search = Object.assign({}, searchTerms, { parent, name });
+	    const searchString = ssgd(search, allowMatchAllFiles); 
 	    const params = {
 		spaces,
 		q: searchString,
 		pageSize: limit,
 		maxResults: limit,
 		orderBy: "folder,name,modifiedTime desc",
-		fields: "files(id,name,mimeType,modifiedTime,size)"
+		fields: `files(${fields})`
 	    };
 
 	    // see https://developers.google.com/drive/v3/web/search-parameters
@@ -78,7 +70,7 @@ function extensions(drive, request, rootFolderId, spaces){
 	    return new Promise(function(resolve, reject){
 		drive.files.list(params, function(err, resp){
 		    if (err) return reject(err);
-		    const result = { parent, name, mimeType, limit, unique,  isSearchResult: true, files: resp.files };
+		    const result = { parent, name, searchTerms, limit, unique,  isSearchResult: true, files: resp.files };
 		    return resolve(result);
 		});
 	    });
@@ -89,7 +81,7 @@ function extensions(drive, request, rootFolderId, spaces){
 
     function checkSearch(searchResult){
 	if (!Array.isArray(searchResult.files))
-	    throw Boom.badRequest(null, { searchResult });
+	    throw Boom.badRequest(null, searchResult);
 	if (searchResult.files.length===0)
 	    throw Boom.notFound("file not found", searchResult );
 	if (searchResult.unique && (searchResult.files.length>1))

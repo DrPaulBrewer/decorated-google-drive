@@ -179,9 +179,9 @@ call `drive.files.export` directly.
 
 As of Oct 2017, the Google Drive REST API and googleapis.drive nodeJS libraries do not let you directly search for `/work/projectA/2012/Oct/customers/JoeSmith.txt`.  
 
-The search can be done, by either searching for any file named JoeSmith.txt and hoping there's no duplicates, or by searching the root folder for `/work` then searching `/work` for `projectA`
-and continuing down the chain.  In the library I wrote functional wrappers on `googleapis.drive` so that `findPath` becomes a functional Promise `p-reduce` of an appropriate folder search
-on an array of path components. Now you can simply call `drive.x.findPath` or `drive.x.appDataFolder.findPath` as follows:
+The search can be done, by either searching for any file named JoeSmith.txt and possibly looking at duplicates, or by searching the root folder for `/work` then searching `/work` for `projectA`
+and continuing down the chain.  In the library, I wrote functional wrappers on `googleapis.drive` so that `findPath` becomes a functional Promise `p-reduce` of an appropriate folder search
+on an array of path components. Now you can simply search for a path by a simple call to `drive.x.findPath` or `drive.x.appDataFolder.findPath` as follows:
 
     drive.x.findPath('/work/projectA/2012/Oct/customers/JoeSmith.txt').then((fileMetaData)=>{...})
 	
@@ -212,13 +212,21 @@ In all cases below, `...` should be replaced by your JavaScript code acting on t
 
 To find all the files in the Drive that you can access, that are not in the trash:
 
-    const findAll = drive.x.searcher({});
-	findAll().then(({files})=>{...})
+    const findAll = drive.x.searcher({trashed: false});
+	findAll().then(({files})=>{...});
 	
 To find the files you can access that are in the trash:
 
 	const findTrash = data.x.searcher({trashed: true});
 	findTrash().then(({files})=>{...});
+	
+To find all the files, you need to set `allowMatchAllFiles` or it will throw an error.
+This is to prevent unwittingly matching all files by way of a blank Drive API search string.
+
+    const findAll = drive.x.searcher({allowMatchAllFiles: true});
+	findAll().then(({files})=>{...});
+	
+You can set which fields are returned by setting `fields` explicitly like this `drive.x.searcher({fields: 'id,name,mimeType,md5Checksum'})`
 	
 Notice that `drive.x.searcher` returns a `function`.  That function takes two parameters, a `parent` which is a folder file id and a `name`.
 
