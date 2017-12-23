@@ -17,10 +17,18 @@ const folderMimeType = 'application/vnd.google-apps.folder';
 // request = require('request')
 
 function decoratedGoogleDrive(googleapis, request, keys, tokens){
+    if (!googleapis)
+	throw new Error("googleapis not defined");
+    if (!googleapis.auth)
+	throw new Error("googleapis.auth not defined");
+    if (!googleapis.auth.OAuth2)
+	throw new Error("googleapis.auth.OAuth2 not defined");
     const OAuth2 = googleapis.auth.OAuth2;
     const auth = new OAuth2(keys.key, keys.secret, keys.redirect);
     auth.setCredentials(tokens);
     const drive = googleapis.drive({version: 'v3', auth});
+    if (typeof(drive)!=='object')
+	throw new Error("drive is not an object, got: "+typeof(drive));
     return decorate(drive, request);
 }
 
@@ -307,26 +315,16 @@ function extensions(drive, request, rootFolderId, spaces){
 
     x.streamToUrl = streamToUrl;
 
-    function checkDuplicates(files){
-	if ((!files) || (files.length===0))
-	    throw(404);
-	if (files.length>1)
-	    throw(new Error("checkDuplicates: failed, multiple files with same name"));
-	return files[1];
-    }
-
-    x.checkDuplicates = checkDuplicates;
-
-    function upload2({folderPath, name, stream, mimeType, createPath, clobber}){
+    function upload2({folderPath, folderId, name, stream, mimeType, createPath, clobber}){
 	function requireString(v, l, k){
 	    if ((typeof(v)!=='string') || (v.length<l))
 		throw new Error("drive.x.upload2, invalid parameter "+k+", requires string of length at least "+l+" chars");
 	}
-	requireString(folderPath, 0, 'folderPath');
 	requireString(name,1,'name');
 	requireString(mimeType,1,'mimeType');
+	if (folderPath && folderId) throw new Boom.badRequest("bad request, specify folderPath or folderId, not both");
 	const findAll = driveSearcher({}); 
-	const getFolder = (createPath)? (driveCreatePath(folderPath)) : (driveFindPath(folderPath));
+	const getFolder = (createPath)? (driveCreatePath(folderPath)) : ( (folderId && Promise.resolve(folderId)) || driveFindPath(folderPath));
 	function go({parent}){
 	    if (parent===undefined) throw Boom.badImplementation("parent undefined");
 	    const pUploadUrl = driveUploadDirector(parent);
@@ -353,7 +351,7 @@ function extensions(drive, request, rootFolderId, spaces){
 		.then(({parent, files})=>{
 		    if (files.length>0)
 			throw Boom.conflict('file exists');
-		    go({parent});
+		    return go({parent});
 		})
 	       );
     }

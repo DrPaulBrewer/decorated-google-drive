@@ -132,6 +132,8 @@ Drive retains the corrupted upload.
 We haven't tried disrupting the upload and then trying to resume it.  It is done in one chunk and seems to deal
 with 50 Mb zip files ok.
 
+As of `decorated-google-drive:2.1.0` It is also possible to set `folderId` to a Drive folder.id string instead of setting `folderPath` to a path string.
+
 ### getting a URL for resumable upload later
 
 If you want to manage the resumable uploads, this creates a 0 byte file and retrieves a resumable upload URL for later use.  

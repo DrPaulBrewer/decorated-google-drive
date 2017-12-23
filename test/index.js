@@ -13,6 +13,7 @@ const fs = require('fs');
 const str = require('string-to-stream');
 const Boom = require('boom');
 const pify = require('pify');
+const folderMimeType = 'application/vnd.google-apps.folder';
 
 const keys = {
     key: process.env.GOOGLE_DRIVE_CLIENT_ID,
@@ -37,6 +38,12 @@ describe('decorated-google-drive:', function(){
 		drive = driveZ(google, request, keys, tokens);
 	    }
 	    init.should.not.throw();
+	});
+	it('drive should not be undefined', function(){
+	    assert.ok(!!drive);
+	});
+	it('drive.x should be an object', function(){
+	    assert.equal(typeof(drive.x),'object');
 	});
     });
     describe(' drive.x.aboutMe ', function(){
@@ -159,7 +166,7 @@ describe('decorated-google-drive:', function(){
 		clobber: true
 	    }).then((info)=>{ uploadResult = info; });
 	});
-	it("uploading the README.md file to /path/to/test/Files/test.zip should resolve with expected file metadata and md5 match", function(){
+	it("uploading the test.zip file to /path/to/test/Files/test.zip should resolve with expected file metadata and md5 match", function(){
 	    uploadResult.should.be.type("object");
 	    uploadResult.should.have.properties('id','name','mimeType','md5Checksum','ourMD5');
 	    uploadResult.id.length.should.be.above(1);
@@ -169,6 +176,53 @@ describe('decorated-google-drive:', function(){
 	    uploadResult.ourMD5.should.equal(testMD5);
 	});
     });
+    describe(' create folder /path/to/test2 ', function(){
+	let test2Folder = null;
+	before(function(){
+	    return drive.x.createPath('/path/to/test2').then((f)=>{ test2Folder=f; });
+	});
+	it(' the resolved folder object should be an object with props id, name, mimeType ' , function(){
+	    test2Folder.should.be.type("object");
+	    test2Folder.should.have.properties('id','name','mimeType');
+	});
+	it(' the folder.id should be a string with length >4 ',function(){
+	    test2Folder.id.should.be.type('string');
+	    test2Folder.id.length.should.be.above(4);
+	});
+	it(' the folder.name should be "test2" ', function(){
+	    test2Folder.name.should.equal('test2');
+	});
+	it(' the mimeType should be '+folderMimeType+' ', function(){
+	    test2Folder.mimeType.should.equal(folderMimeType);
+	});
+    });
+    describe(' use folderId of /path/to/test2 to upload test.zip ', function(){
+	let uploadResult = null;
+	let testMD5 = fs.readFileSync('./test/test.md5','utf8');
+	before(function(){
+	    return drive.x.findPath('/path/to/test2').then((test2Folder)=>{
+		if (!test2Folder.id) throw new Error("test2Folder.id undefined");
+		return drive.x.upload2({
+		    folderId: test2Folder.id,
+		    name: 'test.zip',
+		    stream: fs.createReadStream("./test/test.zip"),
+		    mimeType: 'application/zip',
+		    createPath: false,
+		    clobber: false
+		}).then((info)=>{ uploadResult = info; });
+	    });
+	});
+	it("uploading the test.zip file to /path/to/test2/test.zip should resolve with expected file metadata and md5 match", function(){
+	    uploadResult.should.be.type("object");
+	    uploadResult.should.have.properties('id','name','mimeType','md5Checksum','ourMD5');
+	    uploadResult.id.length.should.be.above(1);
+	    uploadResult.name.should.equal("test.zip");
+	    uploadResult.mimeType.should.equal("application/zip");
+	    uploadResult.ourMD5.should.equal(uploadResult.md5Checksum);
+	    uploadResult.ourMD5.should.equal(testMD5);
+	});
+    });
+
     describe(" cleanup via drive.x.janitor ", function(){
 	let janitor;
 	before(function(){
