@@ -6,6 +6,8 @@
      - [ drive.x.upload2: upload a file README.md to Drive folder /path/to/test/Files](#decorated-google-drive-drivexupload2-upload-a-file-readmemd-to-drive-folder-pathtotestfiles)
      - [ after drive.x.upload2 ](#decorated-google-drive-after-drivexupload2-)
      - [ drive.x.upload2: upload test/test.zip to Drive folder /path/to/test/Files](#decorated-google-drive-drivexupload2-upload-testtestzip-to-drive-folder-pathtotestfiles)
+     - [ create folder /path/to/test2 ](#decorated-google-drive-create-folder-pathtotest2-)
+     - [ use folderId of /path/to/test2 to upload test.zip ](#decorated-google-drive-use-folderid-of-pathtotest2-to-upload-testzip-)
      - [ cleanup via drive.x.janitor ](#decorated-google-drive-cleanup-via-drivexjanitor-)
 <a name=""></a>
  
@@ -20,6 +22,18 @@ function init(){
 	drive = driveZ(google, request, keys, tokens);
     }
     init.should.not.throw();
+```
+
+drive should not be undefined.
+
+```js
+assert.ok(!!drive);
+```
+
+drive.x should be an object.
+
+```js
+assert.equal(typeof(drive.x),'object');
 ```
 
 <a name="decorated-google-drive-drivexaboutme-"></a>
@@ -142,7 +156,49 @@ return drive.x.upload2({
 
 <a name="decorated-google-drive-drivexupload2-upload-testtestzip-to-drive-folder-pathtotestfiles"></a>
 ##  drive.x.upload2: upload test/test.zip to Drive folder /path/to/test/Files
-uploading the README.md file to /path/to/test/Files/test.zip should resolve with expected file metadata and md5 match.
+uploading the test.zip file to /path/to/test/Files/test.zip should resolve with expected file metadata and md5 match.
+
+```js
+uploadResult.should.be.type("object");
+    uploadResult.should.have.properties('id','name','mimeType','md5Checksum','ourMD5');
+    uploadResult.id.length.should.be.above(1);
+    uploadResult.name.should.equal("test.zip");
+    uploadResult.mimeType.should.equal("application/zip");
+    uploadResult.ourMD5.should.equal(uploadResult.md5Checksum);
+    uploadResult.ourMD5.should.equal(testMD5);
+```
+
+<a name="decorated-google-drive-create-folder-pathtotest2-"></a>
+##  create folder /path/to/test2 
+ the resolved folder object should be an object with props id, name, mimeType .
+
+```js
+test2Folder.should.be.type("object");
+    test2Folder.should.have.properties('id','name','mimeType');
+```
+
+ the folder.id should be a string with length >4 .
+
+```js
+test2Folder.id.should.be.type('string');
+    test2Folder.id.length.should.be.above(4);
+```
+
+ the folder.name should be "test2" .
+
+```js
+test2Folder.name.should.equal('test2');
+```
+
+ the mimeType should be application/vnd.google-apps.folder .
+
+```js
+test2Folder.mimeType.should.equal(folderMimeType);
+```
+
+<a name="decorated-google-drive-use-folderid-of-pathtotest2-to-upload-testzip-"></a>
+##  use folderId of /path/to/test2 to upload test.zip 
+uploading the test.zip file to /path/to/test2/test.zip should resolve with expected file metadata and md5 match.
 
 ```js
 uploadResult.should.be.type("object");
