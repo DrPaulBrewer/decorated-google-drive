@@ -25,7 +25,14 @@ function decoratedGoogleDrive(googleapis, request, keys, tokens){
 	throw new Error("googleapis.auth.OAuth2 not defined");
     const OAuth2 = googleapis.auth.OAuth2;
     const auth = new OAuth2(keys.key, keys.secret, keys.redirect);
-    auth.setCredentials(tokens);
+    // possible patch for googleapis 23.0.0 missing .setCredentials bug
+    // see https://github.com/google/google-api-nodejs-client/issues/869
+    // see https://github.com/google/google-auth-library-nodejs/issues/189
+    if (typeof(auth.setCredentials)==='function'){
+	auth.setCredentials(tokens);
+    } else { 
+	auth.credentials = tokens;
+    }
     const drive = googleapis.drive({version: 'v3', auth});
     if (typeof(drive)!=='object')
 	throw new Error("drive is not an object, got: "+typeof(drive));
