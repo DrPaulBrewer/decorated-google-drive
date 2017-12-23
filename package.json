@@ -27,7 +27,7 @@
   "homepage": "https://github.com/DrPaulBrewer/decorated-google-drive#readme",
   "devDependencies": {
     "assert": "^1.4.1",
-    "googleapis": "^22.2.0",
+    "googleapis": "^23.0.0",
     "mocha": "^4.0.1",
     "request": "^2.83.0",
     "should": "^13.1.3",
