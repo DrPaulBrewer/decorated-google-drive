@@ -69,7 +69,7 @@ whereas with Google Plus you can everything someone reveals on their public Goog
 
 Here is code to fetch the logged in user's email address.  
 
-	drive.x.aboutMe.then((info)=>(info.user.emailAddress)).then({...})
+	drive.x.aboutMe().then((info)=>(info.user.emailAddress)).then({...})
 	
 Once you have verified that a set of tokens work, you should encrypt them and store them someplace safe, where your app can get them when a user takes an action.
 `access_token` expires, and usually has a time to live of 1 hour.  It is refreshed by `googleapis` using the `refresh_token`.
