@@ -121,6 +121,49 @@ describe('decorated-google-drive:', function(){
 	});
     });
     describe(' after drive.x.upload2 ', function(){
+	it("searching root for anything should yield folder 'path' with .isFolder===true", function(){
+	    return (drive.x.searcher({trashed:false})('root')
+		    .then((info)=>{
+			assert.ok(Array.isArray(info.files), "info.files is array");
+			assert.ok(info.files.some((f)=>((f.mimeType===folderMimeType) && (f.name==='path') && f.isFolder)), "info.files contains folder 'path'");
+		    })
+		   );
+	});
+
+	it("searching root for folders should yield folder 'path' with .isFolder===true", function(){
+	    return (drive.x.searcher({
+		trashed: false,
+		isFolder: true
+	    })('root').then((info)=>{
+		assert.ok(Array.isArray(info.files), "info.files is array");
+		assert.ok(info.files.some((f)=>((f.mimeType===folderMimeType) && (f.name==='path') && f.isFolder )), "info.files contains folder 'path'");
+	    })
+		   );
+	});
+
+	it("searching root for non-folders should be empty ", function(){
+	    return (drive.x.searcher({
+		trashed: false,
+		isFolder: false
+	    })('root').then((info)=>{
+		assert.ok(Array.isArray(info.files), "info.files is array");
+		assert.ok(info.files.length===0, "info.files should be empty");
+	    })
+		   );
+	});
+
+	it("searching all folders for any non-trashed file should be non-empty and include file README.md in results ", function(){
+	    return (drive.x.searcher({
+		trashed: false,
+		isFolder: false
+	    })().then((info)=>{
+		assert.ok(Array.isArray(info.files), "info.files is array");
+		assert.ok(info.files.some((f)=>((f.name==='README.md') && (!f.isFolder))));
+		assert.ok(info.files.length>0, "info.files should be non-empty");
+	    })
+		   );
+	});
+	
 	it("checking existence with drive.x.findPath should yield expected file metadata", function(){
 	    return drive.x.findPath("/path/to/test/Files/README.md").then((info)=>{
 		info.should.have.properties('id','name','mimeType');

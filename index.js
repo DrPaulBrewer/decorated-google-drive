@@ -85,6 +85,10 @@ function extensions(drive, request, rootFolderId, spaces){
 	    return new Promise(function(resolve, reject){
 		drive.files.list(params, function(err, resp){
 		    if (err) return reject(err);
+		    // add isFolder boolean property to files, comparing mimeType to the Google Drive folder mimeType
+		    if ((resp.files) && (resp.files.length))
+			for(var i=0,l=resp.files.length; i<l; ++i)
+			    resp.files[i].isFolder =  (resp.files[i].mimeType===folderMimeType);
 		    const result = { parent, name, searchTerms, limit, unique,  isSearchResult: true, files: resp.files };
 		    return resolve(result);
 		});

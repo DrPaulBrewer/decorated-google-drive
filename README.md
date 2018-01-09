@@ -258,7 +258,12 @@ You can restrict mimeType or require a unique (single) file in the searcher para
 `drive.x.checkSearch` on the search results.  Successful searches are passed to the next `then()` and searches with missing files or duplicates
 throw errors.  (see `drive.x.findPath` above for a descrption of these Boom errors and how to catch them).
 
-The parent folder can be specified from a drive.x.findPath like this:
+`drive.x.searcher` tests all returned files/folders  mimeTypes against the Google Drive Folder mimeType 'application/vnd.google-apps.folder' and sets 
+`.isFolder` to `true` or `false` for each file/folder in `files` appropriately.
+
+You can also use `isFolder:true` or `isFolder:false` as a search term to limit what is returned.  If `isFolder` is unspecified, a search can return a mix of files and folders.
+
+The parent folder can be specified from an earlier promise, such as `drive.x.findPath` like this:
 
 Finds the folder "/crime/sprees/murder" and looks for any files in this folder that are .png files, then calls imaginary functions
 `notGuilty()` or `guilty()`.  Here `files` is an array so `files.length` is the number of files found.
