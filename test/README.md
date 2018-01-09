@@ -12,7 +12,7 @@ The tests use these OAuth2 scopes
 * `"https://www.googleapis.com/auth/drive"` Create files and read files made by the app.
 * `"https://www.googleapis.com/auth/drive.appfolder"` Use the hidden appDataFolder.
 
-1. set these environment variables
+2. set these environment variables
 
 * `GOOGLE_DRIVE_CLIENT_ID`
 * `GOOGLE_DRIVE_SECRET`
@@ -21,7 +21,7 @@ The tests use these OAuth2 scopes
 * `GOOGLE_DRIVE_REFRESH_TOKEN`
 * `GOOGLE_DRIVE_EXPIRY_DATE`
 
-then run `npm test`
+3. then run `npm test`
 
 Note: In production, your web app will obtain the refresh token the first time your visitor logs into Google Drive and enables the app, and will receive
 access_tokens every time your visitor logs in with Google Drive.
