@@ -289,7 +289,13 @@ This could delete all the accessible files with mimeType audio/mpeg
     const mp3search = drive.x.searcher({mimeType:'audio/mpeg'});
     const Jim = drive.x.janitor('files','deleted');
     mp3search().then(Jim).catch((e)=>{}); // we're trusting Jim the Janitor to clean up a lot here, he might hit an API limit
-   	    
+
+## Additional properties in resolved file objects
+
+`.isNew` is always set to `true` by `drive.x.upload2` and `drive.x.folderCreator`  always and set to `true` conditionally by `drive.x.createPath`, `drive.x.folderFactory` if a new folder is created, and is not set (undefined/falsey)  when the requested folder already exists.
+
+`.isFolder` is set to `true` on searches and folder creation when mimeType in the returned metadata indicates the Google Drive folder mimeType.
+
 ## Tests
 
 I'm going to try to stay sane and not post a set of encrypted API keys and tokens to get a green "build passing" travis badge.

@@ -53,6 +53,20 @@ module.exports = decoratedGoogleDrive;
 function extensions(drive, request, rootFolderId, spaces){
     const x = {};
 
+    function addNew(meta){
+	if (typeof(meta)==='object'){
+	    meta.isNew = true;
+	}
+	return meta;
+    }
+
+    function addIsFolder(meta){
+	if ((typeof(meta)==='object') && (meta.mimeType)){
+	    meta.isFolder = (meta.mimeType === folderMimeType);
+	}
+	return meta;
+    }
+
     function driveAboutMe(_fields){
 	const fields = _fields || "user,storageQuota";
 	return pify(drive.about.get)({fields});
@@ -86,9 +100,8 @@ function extensions(drive, request, rootFolderId, spaces){
 		drive.files.list(params, function(err, resp){
 		    if (err) return reject(err);
 		    // add isFolder boolean property to files, comparing mimeType to the Google Drive folder mimeType
-		    if ((resp.files) && (resp.files.length))
-			for(var i=0,l=resp.files.length; i<l; ++i)
-			    resp.files[i].isFolder =  (resp.files[i].mimeType===folderMimeType);
+		    if (Array.isArray(resp.files))
+			resp.files.forEach(addIsFolder);
 		    const result = { parent, name, searchTerms, limit, unique,  isSearchResult: true, files: resp.files };
 		    return resolve(result);
 		});
@@ -176,7 +189,7 @@ function extensions(drive, request, rootFolderId, spaces){
 			return pify(drive.files.create)({
 			    resource: metadata,
 			    fields: 'id, mimeType, name'
-			});
+			}).then(addNew).then(addIsFolder)
 		    })
 		   );
 	};
@@ -315,6 +328,8 @@ function extensions(drive, request, rootFolderId, spaces){
 				}
 			    }			    
 			}
+			addNew(result);
+			addIsFolder(result);
 			resolve(result);
 		    });
 		    localStream.pipe(md5buddy).pipe(uploadRequest);

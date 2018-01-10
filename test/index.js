@@ -82,9 +82,10 @@ describe('decorated-google-drive:', function(){
 	});
 	it("uploading the string to appDataFolder file myaccount should resolve with expected file metadata", function(){
 	    uploadResult.should.be.type("object");
-	    uploadResult.should.have.properties('id','name','mimeType');
+	    uploadResult.should.have.properties('id','name','mimeType','isNew');
 	    uploadResult.name.should.equal("myaccount");
 	    uploadResult.mimeType.should.equal("text/plain");
+	    uploadResult.isNew.should.equal(true);
 	});
 	it("drive.x.appDataFolder.searcher should report there is exactly one myaccount file in the folder and it should match upload file id", function(){
 	    drive.x.appDataFolder.searcher({})('appDataFolder','myaccount').then((found)=>{
@@ -114,10 +115,11 @@ describe('decorated-google-drive:', function(){
 	});
 	it("uploading the README.md file to /path/to/test/Files/README.md should resolve with expected file metadata", function(){
 	    uploadResult.should.be.type("object");
-	    uploadResult.should.have.properties('id','name','mimeType');
+	    uploadResult.should.have.properties('id','name','mimeType','isNew');
 	    uploadResult.id.length.should.be.above(1);
 	    uploadResult.name.should.equal("README.md");
 	    uploadResult.mimeType.should.equal("text/plain");
+	    uploadResult.isNew.should.equal(true);
 	});
     });
     describe(' after drive.x.upload2 ', function(){
@@ -126,6 +128,7 @@ describe('decorated-google-drive:', function(){
 		    .then((info)=>{
 			assert.ok(Array.isArray(info.files), "info.files is array");
 			assert.ok(info.files.some((f)=>((f.mimeType===folderMimeType) && (f.name==='path') && f.isFolder)), "info.files contains folder 'path'");
+			assert.ok(!info.isNew, "info.isNew should be falsey or undefined");
 		    })
 		   );
 	});
@@ -137,6 +140,7 @@ describe('decorated-google-drive:', function(){
 	    })('root').then((info)=>{
 		assert.ok(Array.isArray(info.files), "info.files is array");
 		assert.ok(info.files.some((f)=>((f.mimeType===folderMimeType) && (f.name==='path') && f.isFolder )), "info.files contains folder 'path'");
+		assert.ok(!info.isNew, "info.isNew should be falsey or undefined");
 	    })
 		   );
 	});
@@ -158,20 +162,34 @@ describe('decorated-google-drive:', function(){
 		isFolder: false
 	    })().then((info)=>{
 		assert.ok(Array.isArray(info.files), "info.files is array");
-		assert.ok(info.files.some((f)=>((f.name==='README.md') && (!f.isFolder))));
+		assert.ok(info.files.some((f)=>((f.name==='README.md') && (!f.isFolder) && (!f.isNew))));
 		assert.ok(info.files.length>0, "info.files should be non-empty");
 	    })
 		   );
 	});
 	
-	it("checking existence with drive.x.findPath should yield expected file metadata", function(){
+	it("checking existence of /path/to/test/Files/README.md with drive.x.findPath should yield expected file metadata", function(){
 	    return drive.x.findPath("/path/to/test/Files/README.md").then((info)=>{
-		info.should.have.properties('id','name','mimeType');
+		info.should.have.properties('id','name','mimeType','isFolder');
+		info.isFolder.should.equal(false);
 		info.id.length.should.be.above(1);
 		info.name.should.equal("README.md");
 		info.mimeType.should.equal("text/plain");
+		assert.ok(!info.isNew, "info.isNew should be falsey or undefined");
 	    });
 	});
+
+	it("checking existence of /path/to/test should yield expected folder metadata", function(){
+	    return drive.x.findPath("/path/to/test").then((info)=>{
+		info.should.have.properties('id','name','mimeType','isFolder');
+		info.isFolder.should.equal(true);
+		info.id.length.should.be.above(1);
+		info.name.should.equal("test");
+		info.mimeType.should.equal(folderMimeType);
+		assert.ok(!info.isNew, "info.isNew should be falsey or undefined");
+	    });
+	});
+	
 	it('checking existence on wrong path should throw Boom.notfound', function(){
 	    // note: folder names seem to ignore upper/lower case
 	    return drive.x.findPath("/not/the/path/to/test/Files/README.md").then(
@@ -211,12 +229,14 @@ describe('decorated-google-drive:', function(){
 	});
 	it("uploading the test.zip file to /path/to/test/Files/test.zip should resolve with expected file metadata and md5 match", function(){
 	    uploadResult.should.be.type("object");
-	    uploadResult.should.have.properties('id','name','mimeType','md5Checksum','ourMD5');
+	    uploadResult.should.have.properties('id','name','mimeType','md5Checksum','ourMD5','isNew','isFolder');
 	    uploadResult.id.length.should.be.above(1);
 	    uploadResult.name.should.equal("test.zip");
 	    uploadResult.mimeType.should.equal("application/zip");
 	    uploadResult.ourMD5.should.equal(uploadResult.md5Checksum);
 	    uploadResult.ourMD5.should.equal(testMD5);
+	    uploadResult.isNew.should.equal(true);
+	    uploadResult.isFolder.should.equal(false);
 	});
     });
     describe(' create folder /path/to/test2 ', function(){
@@ -224,9 +244,9 @@ describe('decorated-google-drive:', function(){
 	before(function(){
 	    return drive.x.createPath('/path/to/test2').then((f)=>{ test2Folder=f; });
 	});
-	it(' the resolved folder object should be an object with props id, name, mimeType ' , function(){
+	it(' the resolved folder object should be an object with props id, name, mimeType, isFolder ' , function(){
 	    test2Folder.should.be.type("object");
-	    test2Folder.should.have.properties('id','name','mimeType');
+	    test2Folder.should.have.properties('id','name','mimeType','isFolder','isNew');
 	});
 	it(' the folder.id should be a string with length >4 ',function(){
 	    test2Folder.id.should.be.type('string');
@@ -237,6 +257,12 @@ describe('decorated-google-drive:', function(){
 	});
 	it(' the mimeType should be '+folderMimeType+' ', function(){
 	    test2Folder.mimeType.should.equal(folderMimeType);
+	});
+	it( ' isNew should be true ', function(){
+	    test2Folder.isNew.should.equal(true);
+	});
+	it( ' isFolder should be true ', function(){
+	    test2Folder.isFolder.should.equal(true);
 	});
     });
     describe(' use folderId of /path/to/test2 to upload test.zip ', function(){
@@ -261,6 +287,8 @@ describe('decorated-google-drive:', function(){
 	    uploadResult.id.length.should.be.above(1);
 	    uploadResult.name.should.equal("test.zip");
 	    uploadResult.mimeType.should.equal("application/zip");
+	    uploadResult.isNew.should.equal(true);
+	    uploadResult.isFolder.should.equal(false);
 	    uploadResult.ourMD5.should.equal(uploadResult.md5Checksum);
 	    uploadResult.ourMD5.should.equal(testMD5);
 	});
