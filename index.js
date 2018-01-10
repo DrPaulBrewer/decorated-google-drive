@@ -189,7 +189,7 @@ function extensions(drive, request, rootFolderId, spaces){
 			return pify(drive.files.create)({
 			    resource: metadata,
 			    fields: 'id, mimeType, name'
-			}).then(addNew).then(addIsFolder)
+			}).then(addNew).then(addIsFolder);
 		    })
 		   );
 	};

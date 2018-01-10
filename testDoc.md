@@ -73,9 +73,10 @@ uploading the string to appDataFolder file myaccount should resolve with expecte
 
 ```js
 uploadResult.should.be.type("object");
-    uploadResult.should.have.properties('id','name','mimeType');
+    uploadResult.should.have.properties('id','name','mimeType','isNew');
     uploadResult.name.should.equal("myaccount");
     uploadResult.mimeType.should.equal("text/plain");
+    uploadResult.isNew.should.equal(true);
 ```
 
 drive.x.appDataFolder.searcher should report there is exactly one myaccount file in the folder and it should match upload file id.
@@ -103,10 +104,11 @@ uploading the README.md file to /path/to/test/Files/README.md should resolve wit
 
 ```js
 uploadResult.should.be.type("object");
-    uploadResult.should.have.properties('id','name','mimeType');
+    uploadResult.should.have.properties('id','name','mimeType','isNew');
     uploadResult.id.length.should.be.above(1);
     uploadResult.name.should.equal("README.md");
     uploadResult.mimeType.should.equal("text/plain");
+    uploadResult.isNew.should.equal(true);
 ```
 
 <a name="decorated-google-drive-after-drivexupload2-"></a>
@@ -118,6 +120,7 @@ return (drive.x.searcher({trashed:false})('root')
 	    .then((info)=>{
 		assert.ok(Array.isArray(info.files), "info.files is array");
 		assert.ok(info.files.some((f)=>((f.mimeType===folderMimeType) && (f.name==='path') && f.isFolder)), "info.files contains folder 'path'");
+		assert.ok(!info.isNew, "info.isNew should be falsey or undefined");
 	    })
 	   );
 ```
@@ -131,6 +134,7 @@ return (drive.x.searcher({
     })('root').then((info)=>{
 	assert.ok(Array.isArray(info.files), "info.files is array");
 	assert.ok(info.files.some((f)=>((f.mimeType===folderMimeType) && (f.name==='path') && f.isFolder )), "info.files contains folder 'path'");
+	assert.ok(!info.isNew, "info.isNew should be falsey or undefined");
     })
 	   );
 ```
@@ -156,20 +160,35 @@ return (drive.x.searcher({
 	isFolder: false
     })().then((info)=>{
 	assert.ok(Array.isArray(info.files), "info.files is array");
-	assert.ok(info.files.some((f)=>((f.name==='README.md') && (!f.isFolder))));
+	assert.ok(info.files.some((f)=>((f.name==='README.md') && (!f.isFolder) && (!f.isNew))));
 	assert.ok(info.files.length>0, "info.files should be non-empty");
     })
 	   );
 ```
 
-checking existence with drive.x.findPath should yield expected file metadata.
+checking existence of /path/to/test/Files/README.md with drive.x.findPath should yield expected file metadata.
 
 ```js
 return drive.x.findPath("/path/to/test/Files/README.md").then((info)=>{
-	info.should.have.properties('id','name','mimeType');
+	info.should.have.properties('id','name','mimeType','isFolder');
+	info.isFolder.should.equal(false);
 	info.id.length.should.be.above(1);
 	info.name.should.equal("README.md");
 	info.mimeType.should.equal("text/plain");
+	assert.ok(!info.isNew, "info.isNew should be falsey or undefined");
+    });
+```
+
+checking existence of /path/to/test should yield expected folder metadata.
+
+```js
+return drive.x.findPath("/path/to/test").then((info)=>{
+	info.should.have.properties('id','name','mimeType','isFolder');
+	info.isFolder.should.equal(true);
+	info.id.length.should.be.above(1);
+	info.name.should.equal("test");
+	info.mimeType.should.equal(folderMimeType);
+	assert.ok(!info.isNew, "info.isNew should be falsey or undefined");
     });
 ```
 
@@ -211,21 +230,23 @@ uploading the test.zip file to /path/to/test/Files/test.zip should resolve with 
 
 ```js
 uploadResult.should.be.type("object");
-    uploadResult.should.have.properties('id','name','mimeType','md5Checksum','ourMD5');
+    uploadResult.should.have.properties('id','name','mimeType','md5Checksum','ourMD5','isNew','isFolder');
     uploadResult.id.length.should.be.above(1);
     uploadResult.name.should.equal("test.zip");
     uploadResult.mimeType.should.equal("application/zip");
     uploadResult.ourMD5.should.equal(uploadResult.md5Checksum);
     uploadResult.ourMD5.should.equal(testMD5);
+    uploadResult.isNew.should.equal(true);
+    uploadResult.isFolder.should.equal(false);
 ```
 
 <a name="decorated-google-drive-create-folder-pathtotest2-"></a>
 ##  create folder /path/to/test2 
- the resolved folder object should be an object with props id, name, mimeType .
+ the resolved folder object should be an object with props id, name, mimeType, isFolder .
 
 ```js
 test2Folder.should.be.type("object");
-    test2Folder.should.have.properties('id','name','mimeType');
+    test2Folder.should.have.properties('id','name','mimeType','isFolder','isNew');
 ```
 
  the folder.id should be a string with length >4 .
@@ -247,6 +268,18 @@ test2Folder.name.should.equal('test2');
 test2Folder.mimeType.should.equal(folderMimeType);
 ```
 
+ isNew should be true .
+
+```js
+test2Folder.isNew.should.equal(true);
+```
+
+ isFolder should be true .
+
+```js
+test2Folder.isFolder.should.equal(true);
+```
+
 <a name="decorated-google-drive-use-folderid-of-pathtotest2-to-upload-testzip-"></a>
 ##  use folderId of /path/to/test2 to upload test.zip 
 uploading the test.zip file to /path/to/test2/test.zip should resolve with expected file metadata and md5 match.
@@ -257,6 +290,8 @@ uploadResult.should.be.type("object");
     uploadResult.id.length.should.be.above(1);
     uploadResult.name.should.equal("test.zip");
     uploadResult.mimeType.should.equal("application/zip");
+    uploadResult.isNew.should.equal(true);
+    uploadResult.isFolder.should.equal(false);
     uploadResult.ourMD5.should.equal(uploadResult.md5Checksum);
     uploadResult.ourMD5.should.equal(testMD5);
 ```
