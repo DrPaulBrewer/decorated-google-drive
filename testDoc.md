@@ -73,7 +73,7 @@ uploading the string to appDataFolder file myaccount should resolve with expecte
 
 ```js
 uploadResult.should.be.type("object");
-    uploadResult.should.have.properties('id','name','mimeType','isNew');
+    uploadResult.should.have.properties('id','name','mimeType','isNew','parents');
     uploadResult.name.should.equal("myaccount");
     uploadResult.mimeType.should.equal("text/plain");
     uploadResult.isNew.should.equal(true);
@@ -104,11 +104,36 @@ uploading the README.md file to /path/to/test/Files/README.md should resolve wit
 
 ```js
 uploadResult.should.be.type("object");
-    uploadResult.should.have.properties('id','name','mimeType','isNew');
+    uploadResult.should.have.properties('id','name','mimeType','isNew','parents');
     uploadResult.id.length.should.be.above(1);
     uploadResult.name.should.equal("README.md");
     uploadResult.mimeType.should.equal("text/plain");
     uploadResult.isNew.should.equal(true);
+    assert.ok(Array.isArray(uploadResult.parents), "uploadResult.parents should be an Array");
+    assert.ok(uploadResult.parents.length===1, "uploadResult.parents.length should be 1");
+    uploadResult.parents[0].should.be.type('string');
+```
+
+the parents[0] folder should have the name 'Files'.
+
+```js
+drive.files.get({fileId: uploadResult.parents[0]}, function(e,data){
+	if (e) throw e;
+	data.name.should.equal('Files');
+	done();
+    });
+```
+
+searching the parents[0] folder for README.md find a file with matching id.
+
+```js
+return (drive.x.searcher({trashed:false})(uploadResult.parents[0], 'README.md')
+	    .then((info)=>{
+		assert.ok(Array.isArray(info.files), "info.files is array");
+		info.files[0].name.should.equal('README.md');
+		info.files[0].id.should.equal(uploadResult.id);
+	    })
+	   );
 ```
 
 <a name="decorated-google-drive-after-drivexupload2-"></a>
@@ -246,7 +271,7 @@ uploadResult.should.be.type("object");
 
 ```js
 test2Folder.should.be.type("object");
-    test2Folder.should.have.properties('id','name','mimeType','isFolder','isNew');
+    test2Folder.should.have.properties('id','name','mimeType','isFolder','isNew','parents');
 ```
 
  the folder.id should be a string with length >4 .
@@ -278,6 +303,14 @@ test2Folder.isNew.should.equal(true);
 
 ```js
 test2Folder.isFolder.should.equal(true);
+```
+
+ parents should be an Array containing 1 string .
+
+```js
+assert.ok(Array.isArray(test2Folder.parents), "test2Folder.parents should be an Array");
+    assert.ok(test2Folder.parents.length===1, "test2Folder.parents.length should be 1");
+    test2Folder.parents[0].should.be.type('string');
 ```
 
 <a name="decorated-google-drive-use-folderid-of-pathtotest2-to-upload-testzip-"></a>
