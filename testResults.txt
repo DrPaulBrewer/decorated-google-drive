@@ -6,25 +6,25 @@
       ✓ drive should not be undefined
       ✓ drive.x should be an object
      drive.x.aboutMe 
-      ✓ should return the test users email address (416ms)
-      ✓ should return a storageQuota object with properties limit, usage (167ms)
-      ✓ drive.about.get still works, as well, and the outputs match (187ms)
+      ✓ should return the test users email address (498ms)
+      ✓ should return a storageQuota object with properties limit, usage (176ms)
+      ✓ drive.about.get still works, as well, and the outputs match (199ms)
      drive.x.appDataFolder.upload2: upload a string to appDataFolder 
       ✓ uploading the string to appDataFolder file myaccount should resolve with expected file metadata
       ✓ drive.x.appDataFolder.searcher should report there is exactly one myaccount file in the folder and it should match upload file id
       ✓ drive.x.appDataFolder.contents should resolve to contents Hello-World-Test-1-2-3
      drive.x.upload2: upload a file README.md to Drive folder /path/to/test/Files
-      ✓ uploading the README.md file to /path/to/test/Files/README.md should resolve with expected file metadata
+      1) uploading the README.md file to /path/to/test/Files/README.md should resolve with expected file metadata
      after drive.x.upload2 
-      ✓ searching root for anything should yield folder 'path' with .isFolder===true (196ms)
-      ✓ searching root for folders should yield folder 'path' with .isFolder===true (218ms)
-      ✓ searching root for non-folders should be empty  (224ms)
-      ✓ searching all folders for any non-trashed file should be non-empty and include file README.md in results  (194ms)
-      ✓ checking existence of /path/to/test/Files/README.md with drive.x.findPath should yield expected file metadata (1026ms)
-      ✓ checking existence of /path/to/test should yield expected folder metadata (592ms)
-      ✓ checking existence on wrong path should throw Boom.notfound (192ms)
-      ✓ downloading content with drive.x.download should yield contents string including 'License: MIT' (1353ms)
-      ✓ drive.x.upload2 uploading the file again with {clobber:false} will throw Boom.conflict error because file already exists (1086ms)
+      ✓ searching root for anything should yield folder 'path' with .isFolder===true (189ms)
+      ✓ searching root for folders should yield folder 'path' with .isFolder===true (256ms)
+      ✓ searching root for non-folders should be empty  (215ms)
+      ✓ searching all folders for any non-trashed file should be non-empty and include file README.md in results  (295ms)
+      ✓ checking existence of /path/to/test/Files/README.md with drive.x.findPath should yield expected file metadata (1032ms)
+      ✓ checking existence of /path/to/test should yield expected folder metadata (636ms)
+      ✓ checking existence on wrong path should throw Boom.notfound (211ms)
+      ✓ downloading content with drive.x.download should yield contents string including 'License: MIT' (1423ms)
+      ✓ drive.x.upload2 uploading the file again with {clobber:false} will throw Boom.conflict error because file already exists (1027ms)
      drive.x.upload2: upload test/test.zip to Drive folder /path/to/test/Files
       ✓ uploading the test.zip file to /path/to/test/Files/test.zip should resolve with expected file metadata and md5 match
      create folder /path/to/test2 
@@ -37,12 +37,30 @@
      use folderId of /path/to/test2 to upload test.zip 
       ✓ uploading the test.zip file to /path/to/test2/test.zip should resolve with expected file metadata and md5 match
      cleanup via drive.x.janitor 
-      ✓ janitor hopefully deletes the README.md file(s) OK and resolves correctly (1391ms)
-      ✓ drive.x.findPath will throw Boom.notFound if the file was successfully deleted (1015ms)
-      ✓ janitor will throw an error if told to delete an invalid file (135ms)
+      ✓ janitor hopefully deletes the README.md file(s) OK and resolves correctly (1485ms)
+      ✓ drive.x.findPath will throw Boom.notFound if the file was successfully deleted (1086ms)
+      ✓ janitor will throw an error if told to delete an invalid file (139ms)
       ✓ janitor should not throw an error if given an empty filelist
-      ✓ final cleanup: delete the path folder and check non-existence (979ms)
+      ✓ final cleanup: delete the path folder and check non-existence (1013ms)
 
 
-  32 passing (18s)
+  31 passing (20s)
+  1 failing
+
+  1) decorated-google-drive:
+        drive.x.upload2: upload a file README.md to Drive folder /path/to/test/Files
+         uploading the README.md file to /path/to/test/Files/README.md should resolve with expected file metadata:
+     AssertionError: expected Object {
+  id: '19HOXNqijkD8LNUtpTmv-LOu4ZQQ8z50N',
+  name: 'README.md',
+  mimeType: 'text/plain',
+  md5Checksum: '6e8f30a63bc2af1a1b9a63e76c3a90ec',
+  isNew: true,
+  isFolder: false
+} to have property parents
+      at Assertion.fail (node_modules/should/cjs/should.js:275:17)
+      at Assertion.value [as properties] (node_modules/should/cjs/should.js:356:19)
+      at Context.<anonymous> (test/index.js:118:31)
+
+
 

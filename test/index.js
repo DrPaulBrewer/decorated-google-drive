@@ -115,11 +115,14 @@ describe('decorated-google-drive:', function(){
 	});
 	it("uploading the README.md file to /path/to/test/Files/README.md should resolve with expected file metadata", function(){
 	    uploadResult.should.be.type("object");
-	    uploadResult.should.have.properties('id','name','mimeType','isNew');
+	    uploadResult.should.have.properties('id','name','mimeType','isNew','parents');
 	    uploadResult.id.length.should.be.above(1);
 	    uploadResult.name.should.equal("README.md");
 	    uploadResult.mimeType.should.equal("text/plain");
 	    uploadResult.isNew.should.equal(true);
+	    assert.ok(Array.isArray(uploadResult.parents), "uploadResult.parents should be an Array");
+	    assert.ok(uploadResult.parents.length===1, "uploadResult.parents.length should be 1");
+	    uploadResult.parents[0].should.be.type('string');
 	});
     });
     describe(' after drive.x.upload2 ', function(){
