@@ -79,7 +79,7 @@ function extensions(drive, request, rootFolderId, spaces){
 	const unique = options.unique;
 	if (unique) limit = 2;
 	const allowMatchAllFiles = options.allowMatchAllFiles;
-	const fields = options.fields || 'id,name,mimeType,modifiedTime,size'; 
+	const fields = options.fields || 'id,name,mimeType,modifiedTime,size,parents';
 	const searchTerms = ssgd.extract(options);
 	
 	return function(parent, name){
@@ -188,7 +188,7 @@ function extensions(drive, request, rootFolderId, spaces){
 			};
 			return pify(drive.files.create)({
 			    resource: metadata,
-			    fields: 'id, mimeType, name'
+			    fields: 'id, mimeType, name, parents'
 			}).then(addNew).then(addIsFolder);
 		    })
 		   );
@@ -276,7 +276,7 @@ function extensions(drive, request, rootFolderId, spaces){
 			    const meta = Object.assign({}, metadata, {parents: [parent], spaces});
 			    const req = drive.files.create({
 				resource: meta,
-				fields: 'id,name,mimeType,md5Checksum'
+				fields: 'id,name,mimeType,md5Checksum,parents'
 			    },{
 				url: "https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable"
 			    });
