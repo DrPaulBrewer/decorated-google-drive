@@ -186,6 +186,17 @@ describe('decorated-google-drive:', function(){
 	    })
 		   );
 	});
+
+	it("searching all folders or a file with appProperties: { 'role': 'documentation' } should be empty ", function(){
+	    return (drive.x.searcher({
+		appProperties: {
+		    'role': 'documentation'
+		}
+	    })().then((info)=>{
+		assert.ok(info.files.length===0, "info.files should be empty");
+	    })
+		   );
+	});
 	
 	it("checking existence of /path/to/test/Files/README.md with drive.x.findPath should yield expected file metadata", function(){
 	    return drive.x.findPath("/path/to/test/Files/README.md").then((info)=>{
@@ -216,12 +227,42 @@ describe('decorated-google-drive:', function(){
 		(e)=>{ if (e.isBoom && e.typeof===Boom.notFound) return Promise.resolve("ok, got Boom 404"); throw e; }
 	    );
 	});
+	
 	it("downloading content with drive.x.download should yield contents string including 'License: MIT'", function(){
 	    return drive.x.download("/path/to/test/Files/README.md").then((contents)=>{
 		contents.should.be.type('string');
 		assert.ok(contents.includes("License: MIT"));
 	    });
 	});
+
+	it("updating README.md appProperties to {'role': 'documentation'} should succeed", function(){
+	    return (drive.x.findPath("/path/to/test/Files/README.md")
+		    .then((file)=>(drive.x.updateMetadata(file.id, { appProperties: {role: 'documentation'}, description: "read this first" })))
+		    .then((info)=>{
+			// checks response from drive.x.updateMetadata
+			info.appProperties.role.should.equal('documentation');
+			info.description.should.equal('read this first');
+			return drive.files.get({fileId: info.id, fields: "id,name,description,appProperties"});
+		    }).then((info)=>{
+			// checks response from subsequent drive.files.get
+			info.description.should.equal("read this first");
+			info.appProperties.role.should.equal('documentation');
+		    })
+		   );
+	});
+
+	it("searching all folders or a file with appProperties: { 'role': 'documentation' } should find README.md ", function(){
+	    return (drive.x.searcher({
+		appProperties: {
+		    'role': 'documentation'
+		}
+	    })().then((info)=>{
+		assert.ok(info.files.length===1, "info.files should contain one file");
+		assert.ok(info.files[0].name==="README.md", "info.files[0].name should be README.md");
+	    })
+		   );
+	});
+	
 	it("drive.x.upload2 uploading the file again with {clobber:false} will throw Boom.conflict error because file already exists", function(){
 	    return drive.x.upload2({
 		folderPath: '/path/to/test/Files/',
