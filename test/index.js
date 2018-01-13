@@ -259,6 +259,8 @@ describe('decorated-google-drive:', function(){
 	    })().then((info)=>{
 		assert.ok(info.files.length===1, "info.files should contain one file");
 		assert.ok(info.files[0].name==="README.md", "info.files[0].name should be README.md");
+		info.files[0].appProperties.role.should.equal('documentation');
+		assert.ok(typeof(info.files[0].description)==='undefined', "info.files[0].description should be undefined");
 	    })
 		   );
 	});
