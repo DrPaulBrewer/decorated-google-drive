@@ -27,10 +27,10 @@
   "homepage": "https://github.com/DrPaulBrewer/decorated-google-drive#readme",
   "devDependencies": {
     "assert": "^1.4.1",
-    "googleapis": "^23.0.0",
+    "googleapis": "^24.0.0",
     "mocha": "^4.1.0",
     "request": "^2.83.0",
-    "should": "^13.2.0",
+    "should": "^13.2.1",
     "string-to-stream": "^1.1.0"
   },
   "dependencies": {
