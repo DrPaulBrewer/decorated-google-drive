@@ -81,6 +81,11 @@ function extensions(drive, request, rootFolderId, spaces){
 	const allowMatchAllFiles = options.allowMatchAllFiles;
 	const fields = options.fields || 'id,name,mimeType,modifiedTime,size,parents';
 	const searchTerms = ssgd.extract(options);
+
+	/* convert falsey/undefined searchTerms.trashed to explicit false */
+	
+	if (!searchTerms.trashed)
+	    searchTerms.trashed = false;
 	
 	return function(parent, name){
 	    const search = Object.assign({}, searchTerms, { parent, name });

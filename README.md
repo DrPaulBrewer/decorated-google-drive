@@ -214,19 +214,15 @@ In all cases below, `...` should be replaced by your JavaScript code acting on t
 
 To find all the files in the Drive that you can access, that are not in the trash:
 
-    const findAll = drive.x.searcher({trashed: false});
+    const findAll = drive.x.searcher({}); // or { trashed: false }
 	findAll().then(({files})=>{...});
 	
 To find the files you can access that are in the trash:
 
 	const findTrash = data.x.searcher({trashed: true});
 	findTrash().then(({files})=>{...});
-	
-To find all the files, you need to set `allowMatchAllFiles` or it will throw an error.
-This is to prevent unwittingly matching all files by way of a blank Drive API search string.
 
-    const findAll = drive.x.searcher({allowMatchAllFiles: true});
-	findAll().then(({files})=>{...});
+Note that as of 3.0.0 there is no way to return all the files independent of trash status.
 	
 You can set which fields are returned by setting `fields` explicitly like this `drive.x.searcher({fields: 'id,name,mimeType,md5Checksum'})`
 	
