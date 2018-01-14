@@ -242,7 +242,7 @@ describe('decorated-google-drive:', function(){
 			// checks response from drive.x.updateMetadata
 			info.appProperties.role.should.equal('documentation');
 			info.description.should.equal('read this first');
-			return drive.files.get({fileId: info.id, fields: "id,name,description,appProperties"});
+			return pify(drive.files.get)({fileId: info.id, fields: "id,name,description,appProperties"});
 		    }).then((info)=>{
 			// checks response from subsequent drive.files.get
 			info.description.should.equal("read this first");

@@ -67,6 +67,15 @@ function extensions(drive, request, rootFolderId, spaces){
 	return meta;
     }
 
+    function addFieldsFromKeys(fields, obj){
+	var allfields = fields;
+	Object.keys(obj).forEach((term)=>{
+	    if ((term !== 'isFolder') && (!fields.includes(term)))
+		allfields += (','+term);
+	});
+	return allfields;
+    }
+
     function driveAboutMe(_fields){
 	const fields = _fields || "user,storageQuota";
 	return pify(drive.about.get)({fields});
@@ -76,11 +85,16 @@ function extensions(drive, request, rootFolderId, spaces){
 
     function driveSearcher(options){
 	var limit = ( options.limit || 1000 );
+	var fields = options.fields || 'id,name,mimeType,modifiedTime,size,parents';
 	const unique = options.unique;
 	if (unique) limit = 2;
 	const allowMatchAllFiles = options.allowMatchAllFiles;
-	const fields = options.fields || 'id,name,mimeType,modifiedTime,size,parents';
 	const searchTerms = ssgd.extract(options);
+
+	/* each explicit searchTerm is added to default fields, except pseudoTerm isFolder */
+
+	if (!options.fields)
+	    fields = addFieldsFromKeys(fields, searchTerms);
 
 	/* convert falsey/undefined searchTerms.trashed to explicit false */
 	
@@ -253,6 +267,13 @@ function extensions(drive, request, rootFolderId, spaces){
     }
 
     x.createPath = driveCreatePath;
+
+    function driveUpdateMetadata(fileId, metadata){
+	const fields = addFieldsFromKeys('id,name,mimeType,modifiedTime,size,parents', metadata);
+	return pify(drive.files.update)({fileId, fields, resource: metadata});
+    }
+
+    x.updateMetadata = driveUpdateMetadata;
 
     function folderFrom(path){
 	const parts = path.split('/').filter((s)=>(s.length>0));

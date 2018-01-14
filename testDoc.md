@@ -191,6 +191,19 @@ return (drive.x.searcher({
 	   );
 ```
 
+searching all folders or a file with appProperties: { 'role': 'documentation' } should be empty .
+
+```js
+return (drive.x.searcher({
+	appProperties: {
+	    'role': 'documentation'
+	}
+    })().then((info)=>{
+	assert.ok(info.files.length===0, "info.files should be empty");
+    })
+	   );
+```
+
 checking existence of /path/to/test/Files/README.md with drive.x.findPath should yield expected file metadata.
 
 ```js
@@ -234,6 +247,40 @@ return drive.x.download("/path/to/test/Files/README.md").then((contents)=>{
 	contents.should.be.type('string');
 	assert.ok(contents.includes("License: MIT"));
     });
+```
+
+updating README.md appProperties to {'role': 'documentation'} should succeed.
+
+```js
+return (drive.x.findPath("/path/to/test/Files/README.md")
+	    .then((file)=>(drive.x.updateMetadata(file.id, { appProperties: {role: 'documentation'}, description: "read this first" })))
+	    .then((info)=>{
+		// checks response from drive.x.updateMetadata
+		info.appProperties.role.should.equal('documentation');
+		info.description.should.equal('read this first');
+		return pify(drive.files.get)({fileId: info.id, fields: "id,name,description,appProperties"});
+	    }).then((info)=>{
+		// checks response from subsequent drive.files.get
+		info.description.should.equal("read this first");
+		info.appProperties.role.should.equal('documentation');
+	    })
+	   );
+```
+
+searching all folders or a file with appProperties: { 'role': 'documentation' } should find README.md .
+
+```js
+return (drive.x.searcher({
+	appProperties: {
+	    'role': 'documentation'
+	}
+    })().then((info)=>{
+	assert.ok(info.files.length===1, "info.files should contain one file");
+	assert.ok(info.files[0].name==="README.md", "info.files[0].name should be README.md");
+	info.files[0].appProperties.role.should.equal('documentation');
+	assert.ok(typeof(info.files[0].description)==='undefined', "info.files[0].description should be undefined");
+    })
+	   );
 ```
 
 drive.x.upload2 uploading the file again with {clobber:false} will throw Boom.conflict error because file already exists.

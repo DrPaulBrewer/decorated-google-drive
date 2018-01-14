@@ -217,6 +217,8 @@ To find all the files in the Drive that you can access, that are not in the tras
     const findAll = drive.x.searcher({}); // or { trashed: false }
 	findAll().then(({files})=>{...});
 	
+Here `files` is an array of objects with properties `.id`, `.name`, `.parents`, `.mimeType` and at least the properties you were searching over.
+	
 To find the files you can access that are in the trash:
 
 	const findTrash = data.x.searcher({trashed: true});
@@ -237,7 +239,7 @@ To find zero, one or more files named `kittens.png` in the root of the Drive:
 
     findAll('root', 'kittens'png').then(({files})=>{...});
 	
-To find zero, one, or more trashed file named `severedhead.png` in any trashed folder in the Drive:
+To find zero, one, or more trashed file named `severedhead.png` in the Drive:
 
 	const findTrash = data.x.searcher({trashed: true});
     findTrash(null, 'severedHead.png').then(({files})=>{...});
@@ -270,6 +272,15 @@ Finds the folder "/crime/sprees/murder" and looks for any files in this folder t
 		.then( ({files})=>{ if (files.length===0) return notGuilty(); return guilty(); } )
 		.catch( (e)=>{ if (e.isBoom && e.typeof===Boom.notFound) return notGuilty(); throw e; })
 		)
+		
+### update file metadata
+
+`drive.x.updateMetadata(fileId, metadata)` is a Promise-based alias for `drive.files.update({fileId, resource:metadata})` 
+
+`drive.x.updateMetadata(fileId, {properties: {role: 'instructions'}, description: 'read this first'})` would set public file properties to `{role: 'instructions'}` and 
+set the file's `description` field to "read this first".
+
+The Promise resolves to the new file object, with properties `.id`,`.name`,`.mimeType`,`.parents`, and at least any fields set in metadata.
 		
 ### delete the files you found
 
