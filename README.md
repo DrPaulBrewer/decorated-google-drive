@@ -6,9 +6,11 @@ Initialize googleapi's Google Drive[tm] nodejs client, decorated with some usefu
 
 ### Install
 
-Pre-requisites are `googleapis` and `request`
+Pre-requisites are `googleapis@24.0.0` and `request`
 
-    npm i googleapis -S
+**v3 limitation** `googleapis@25.0.0` introduces incompatibilities with `decorated-google-drive@3`
+
+    npm i googleapis@24.0.0 -S
     npm i request -S
     npm i decorated-google-drive -S
 
