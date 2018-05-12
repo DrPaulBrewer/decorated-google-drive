@@ -9,8 +9,8 @@ Initialize googleapi's Google Drive[tm] nodejs client, decorated with some usefu
 Pre-requisites are `googleapis` and `request`
 
     npm i googleapis -S
-	npm i request -S
-	npm i decorated-google-drive -S
+    npm i request -S
+    npm i decorated-google-drive -S
 
 ### Initialize
 
@@ -20,9 +20,9 @@ The `tokens` are obtained when a user "Logs in with Google" in your app.  There 
 `passport` for `express`, `grant` and `bell` for `hapi`, and even a client-Javascript side library you can get from Google.  
 
     const googleapis = require('googleapis'); // worked with googleapis-22.20
-	const request = require('request'); // worked with request-2.83.0
-	const driveX = require('decorated-google-drive');
-	const keys = {
+    const request = require('request'); // worked with request-2.83.0
+    const driveX = require('decorated-google-drive');
+    const keys = {
 		key:  "your-drive-api-key-goes-here",
 		secret: "your-drive-api-secret-goes-here",
 		redirect: "https://yourhost.com/your/apps/google/redirect/url"
@@ -329,4 +329,3 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 This is third party software, not a product of Google Inc.
 
 Google Drive[tm] is a trademark of Google, Inc.
-
