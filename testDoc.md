@@ -2,6 +2,7 @@
    - [decorated-google-drive:](#decorated-google-drive)
      - [ initializing ](#decorated-google-drive-initializing-)
      - [ drive.x.aboutMe ](#decorated-google-drive-drivexaboutme-)
+     - [ drive.x.hexid ](#decorated-google-drive-drivexhexid-)
      - [ drive.x.appDataFolder.upload2: upload a string to appDataFolder ](#decorated-google-drive-drivexappdatafolderupload2-upload-a-string-to-appdatafolder-)
      - [ drive.x.upload2: upload a file README.md to Drive folder /path/to/test/Files](#decorated-google-drive-drivexupload2-upload-a-file-readmemd-to-drive-folder-pathtotestfiles)
      - [ after drive.x.upload2 ](#decorated-google-drive-after-drivexupload2-)
@@ -19,7 +20,7 @@ should not throw an error.
 
 ```js
 function init() {
-  drive = driveZ(google, request, keys, tokens);
+  drive = driveZ(google, request, keys, tokens, salt);
 }
 init.should.not.throw();
 ```
@@ -65,6 +66,31 @@ return Promise.all([
 ]).then(([A, B]) => {
   A.should.deepEqual(B);
 });
+```
+
+<a name="decorated-google-drive-drivexhexid-"></a>
+##  drive.x.hexid 
+should return a 40 char hex id.
+
+```js
+async function (){
+      const hex = await drive.x.hexid();
+      return hex.should.match(sha1Regex);
+    }
+```
+
+should consistently return the same 40 char hex when called 3 times.
+
+```js
+async function (){
+      return Promise
+        .all([drive.x.hexid(), drive.x.hexid(), drive.x.hexid()])
+        .then(([a,b,c])=>{
+          a.should.match(sha1Regex);
+          a.should.equal(b);
+          a.should.equal(c);
+        });
+    }
 ```
 
 <a name="decorated-google-drive-drivexappdatafolderupload2-upload-a-string-to-appdatafolder-"></a>

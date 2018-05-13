@@ -8,10 +8,11 @@ const pReduce = require('p-reduce');
 const Boom = require('boom');
 const digestStream = require('digest-stream');
 const ssgd = require('search-string-for-google-drive');
+const crypto = require('crypto');
 
 const folderMimeType = 'application/vnd.google-apps.folder';
 
-function extensions(drive, request, rootFolderId, spaces) {
+function extensions(drive, request, rootFolderId, spaces, salt) {
   const x = {};
 
   function addNew(meta) {
@@ -45,6 +46,21 @@ function extensions(drive, request, rootFolderId, spaces) {
   }
 
   x.aboutMe = driveAboutMe;
+  
+  async function driveHexid(){
+      if (!salt) throw Boom.badImplementation("missing salt");
+      if (!crypto) throw Boom.badImplementation("missing crypto");
+      const info = await driveAboutMe();
+      const salty = salt+(info.user.emailAddress.trim().replace('@','.'));
+      return (
+        crypto
+        .createHash('sha1')
+        .update(salty)
+        .digest('hex')
+      );
+  }
+  
+  x.hexid = driveHexid;
 
   function driveSearcher(options) {
     let limit = (options.limit || 1000);
@@ -376,21 +392,21 @@ function extensions(drive, request, rootFolderId, spaces) {
   return x;
 }
 
-function decorate(drive, request) {
+function decorate(drive, request, salt) {
   // drive is delivered from googleapis frozen, so we'll refreeze after adding extensions
   const extras = {};
-  extras.x = extensions(drive, request, 'root', 'drive');
-  extras.x.appDataFolder = extensions(drive, request, 'appDataFolder', 'appDataFolder');
+  extras.x = extensions(drive, request, 'root', 'drive', salt);
+  extras.x.appDataFolder = extensions(drive, request, 'appDataFolder', 'appDataFolder', salt);
   return Object.freeze(Object.assign({}, drive, extras));
 }
 
-function decoratedGoogleDrive(googleapis, request, keys, tokens) {
+function decoratedGoogleDrive(googleapis, request, keys, tokens, salt) {
   if (!googleapis)
-    throw new Error("googleapis not defined");
+    throw Boom.badImplementation("googleapis not defined");
   if (!googleapis.auth)
-    throw new Error("googleapis.auth not defined");
+    throw Boom.badImplementation("googleapis.auth not defined");
   if (!googleapis.auth.OAuth2)
-    throw new Error("googleapis.auth.OAuth2 not defined");
+    throw Boom.badImplementation("googleapis.auth.OAuth2 not defined");
   const OAuth2 = googleapis.auth.OAuth2;
   const auth = new OAuth2(keys.key, keys.secret, keys.redirect);
   // possible patch for googleapis 23.0.0 missing .setCredentials bug
@@ -403,10 +419,9 @@ function decoratedGoogleDrive(googleapis, request, keys, tokens) {
   }
   const drive = googleapis.drive({ version: 'v3', auth });
   if (typeof(drive) !== 'object')
-    throw new Error("drive is not an object, got: " + typeof(drive));
-  return decorate(drive, request);
+    throw Boom.badImplementation("drive is not an object, got: " + typeof(drive));
+  return decorate(drive, request, salt);
 }
-
 
 decoratedGoogleDrive.decorate = decorate;
 module.exports = decoratedGoogleDrive;

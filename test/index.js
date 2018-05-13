@@ -14,6 +14,8 @@ const str = require('string-to-stream');
 const Boom = require('boom');
 const folderMimeType = 'application/vnd.google-apps.folder';
 
+const salt = "100% Pure Sea Salt";
+
 const keys = {
   key: process.env.GOOGLE_DRIVE_CLIENT_ID,
   secret: process.env.GOOGLE_DRIVE_SECRET,
@@ -34,7 +36,7 @@ describe('decorated-google-drive:', function () {
   describe(' initializing ', function () {
     it('should not throw an error', function () {
       function init() {
-        drive = driveZ(google, request, keys, tokens);
+        drive = driveZ(google, request, keys, tokens, salt);
       }
       init.should.not.throw();
     });
@@ -65,6 +67,22 @@ describe('decorated-google-drive:', function () {
       ]).then(([A, B]) => {
         A.should.deepEqual(B);
       });
+    });
+  });
+  const sha1Regex = /^[0-9a-f]{40}$/;
+  describe(' drive.x.hexid ', function(){
+    it('should return a 40 char hex id', async function(){
+      const hex = await drive.x.hexid();
+      return hex.should.match(sha1Regex);
+    });
+    it('should consistently return the same 40 char hex when called 3 times', async function(){
+      return Promise
+        .all([drive.x.hexid(), drive.x.hexid(), drive.x.hexid()])
+        .then(([a,b,c])=>{
+          a.should.match(sha1Regex);
+          a.should.equal(b);
+          a.should.equal(c);
+        });
     });
   });
   describe(' drive.x.appDataFolder.upload2: upload a string to appDataFolder ', function () {
