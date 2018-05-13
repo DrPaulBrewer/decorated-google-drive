@@ -54,7 +54,7 @@ function extensions(drive, request, rootFolderId, spaces, salt) {
       const salty = salt+(info.user.emailAddress.trim().replace('@','.'));
       return (
         crypto
-        .createHash('sha1')
+        .createHash('sha256')
         .update(salty)
         .digest('hex')
       );

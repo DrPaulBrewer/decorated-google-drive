@@ -70,23 +70,23 @@ return Promise.all([
 
 <a name="decorated-google-drive-drivexhexid-"></a>
 ##  drive.x.hexid 
-should return a 40 char hex id.
+should return a 64 char hex id.
 
 ```js
 async function (){
       const hex = await drive.x.hexid();
-      return hex.should.match(sha1Regex);
+      return hex.should.match(sha256Regex);
     }
 ```
 
-should consistently return the same 40 char hex when called 3 times.
+should consistently return the same 64 char hex when called 3 times.
 
 ```js
 async function (){
       return Promise
         .all([drive.x.hexid(), drive.x.hexid(), drive.x.hexid()])
         .then(([a,b,c])=>{
-          a.should.match(sha1Regex);
+          a.should.match(sha256Regex);
           a.should.equal(b);
           a.should.equal(c);
         });

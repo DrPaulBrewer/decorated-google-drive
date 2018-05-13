@@ -69,17 +69,17 @@ describe('decorated-google-drive:', function () {
       });
     });
   });
-  const sha1Regex = /^[0-9a-f]{40}$/;
+  const sha256Regex = /^[0-9a-f]{64}$/;
   describe(' drive.x.hexid ', function(){
-    it('should return a 40 char hex id', async function(){
+    it('should return a 64 char hex id', async function(){
       const hex = await drive.x.hexid();
-      return hex.should.match(sha1Regex);
+      return hex.should.match(sha256Regex);
     });
-    it('should consistently return the same 40 char hex when called 3 times', async function(){
+    it('should consistently return the same 64 char hex when called 3 times', async function(){
       return Promise
         .all([drive.x.hexid(), drive.x.hexid(), drive.x.hexid()])
         .then(([a,b,c])=>{
-          a.should.match(sha1Regex);
+          a.should.match(sha256Regex);
           a.should.equal(b);
           a.should.equal(c);
         });

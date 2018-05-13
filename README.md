@@ -2,7 +2,11 @@
 
 Initialize googleapi's Google Drive[tm] nodejs client, decorated with some useful 3rd party extensions.
 
-## new in v4
+## new in v4.2
+* `drive.x.hexid()` returns a Promise resolving to a consistent 40 char hex id that is an anonymous pseudonym of the drive owner's email address.
+* you can enable `drive.x.hexid` by setting any string as the salt for the hexid sha256 hash when `driveX` is called to initialize.
+
+## new in v4.0
 
 * (hopefully) now compatible with googleapis@30.0.0
 * Initialization has changed slightly, because googleapis@30.0.0 uses named exports
@@ -34,6 +38,7 @@ The `tokens` are obtained when a user "Logs in with Google" in your app.  There 
     const {google} = require('googleapis'); // works with googleapis-30.0.0
     const request = require('request'); // worked with request-2.83.0
     const driveX = require('decorated-google-drive');
+    const salt = "100% Organic Sea Salt, or some other string for salting the email addresses when making hexids";
     const keys = {
 		key:  "your-drive-api-key-goes-here",
 		secret: "your-drive-api-secret-goes-here",
@@ -45,7 +50,7 @@ The `tokens` are obtained when a user "Logs in with Google" in your app.  There 
 	    access_token: "the-latest-access-token-your-app-received-the-most-recent-time-the-visitor-logged-in,
 		expiry_time: Date.now()+1000*60*59 // 59 minutes
     };
-	const drive = driveX(google, request, keys, tokens); 
+	const drive = driveX(google, request, keys, tokens, salt); 
 
 Now:
 * `drive` contains a googleapis.drive official client
