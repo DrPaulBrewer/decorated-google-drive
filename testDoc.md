@@ -61,7 +61,7 @@ drive.about.get still works, as well, and the outputs match.
 ```js
 return Promise.all([
   drive.x.aboutMe(),
-  pify(drive.about.get)({ fields: 'user, storageQuota' })
+  drive.about.get({ fields: 'user, storageQuota' }).then((res)=>(res.data))
 ]).then(([A, B]) => {
   A.should.deepEqual(B);
 });
@@ -117,9 +117,9 @@ uploadResult.parents[0].should.be.type('string');
 the parents[0] folder should have the name 'Files'.
 
 ```js
-drive.files.get({ fileId: uploadResult.parents[0] }, function (e, data) {
+drive.files.get({ fileId: uploadResult.parents[0] }, function (e, response) {
   if (e) throw e;
-  data.name.should.equal('Files');
+  response.data.name.should.equal('Files');
   done();
 });
 ```
@@ -254,7 +254,7 @@ return (drive.x.findPath("/path/to/test/Files/README.md")
     // checks response from drive.x.updateMetadata
     info.appProperties.role.should.equal('documentation');
     info.description.should.equal('read this first');
-    return pify(drive.files.get)({ fileId: info.id, fields: "id,name,description,appProperties" });
+    return drive.files.get({ fileId: info.id, fields: "id,name,description,appProperties" }).then((resp)=>(resp.data));
   }).then((info) => {
     // checks response from subsequent drive.files.get
     info.description.should.equal("read this first");

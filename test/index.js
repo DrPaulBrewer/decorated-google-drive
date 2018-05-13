@@ -7,12 +7,11 @@
 
 const assert = require('assert');
 require('should');
-const google = require('googleapis');
+const {google} = require('googleapis');
 const request = require('request');
 const fs = require('fs');
 const str = require('string-to-stream');
 const Boom = require('boom');
-const pify = require('pify');
 const folderMimeType = 'application/vnd.google-apps.folder';
 
 const keys = {
@@ -62,7 +61,7 @@ describe('decorated-google-drive:', function () {
     it('drive.about.get still works, as well, and the outputs match', function () {
       return Promise.all([
         drive.x.aboutMe(),
-        pify(drive.about.get)({ fields: 'user, storageQuota' })
+        drive.about.get({ fields: 'user, storageQuota' }).then((res)=>(res.data))
       ]).then(([A, B]) => {
         A.should.deepEqual(B);
       });
@@ -125,9 +124,9 @@ describe('decorated-google-drive:', function () {
       uploadResult.parents[0].should.be.type('string');
     });
     it("the parents[0] folder should have the name 'Files'", function (done) {
-      drive.files.get({ fileId: uploadResult.parents[0] }, function (e, data) {
+      drive.files.get({ fileId: uploadResult.parents[0] }, function (e, response) {
         if (e) throw e;
-        data.name.should.equal('Files');
+        response.data.name.should.equal('Files');
         done();
       });
     });
@@ -238,7 +237,7 @@ describe('decorated-google-drive:', function () {
           // checks response from drive.x.updateMetadata
           info.appProperties.role.should.equal('documentation');
           info.description.should.equal('read this first');
-          return pify(drive.files.get)({ fileId: info.id, fields: "id,name,description,appProperties" });
+          return drive.files.get({ fileId: info.id, fields: "id,name,description,appProperties" }).then((resp)=>(resp.data));
         }).then((info) => {
           // checks response from subsequent drive.files.get
           info.description.should.equal("read this first");

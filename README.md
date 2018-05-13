@@ -2,15 +2,25 @@
 
 Initialize googleapi's Google Drive[tm] nodejs client, decorated with some useful 3rd party extensions.
 
+## new in v4
+
+* (hopefully) now compatible with googleapis@30.0.0
+* Initialization has changed slightly, because googleapis@30.0.0 uses named exports
+* Now promise/async compatible at both clasic `drive` and extensions `drive.x`
+* mostly the same API as v3, minimal changes.  Still uses `request` for resumable upload.  Will move to axios for `v5`. 
+   * The `drive` functionality is vanilla GoogleApis and from their changes you may need to `.then((resp)=>(resp.data))`
+   * The `drive.x` functionality is mostly the same, except  promise-yielding functions are now explicitly marked as async function
+  
+
 ## Usage
 
 ### Install
 
-Pre-requisites are `googleapis@24.0.0` and `request`
+Pre-requisites are `googleapis@30.0.0` and `request`
 
-**v3 limitation** `googleapis@25.0.0` introduces incompatibilities with `decorated-google-drive@3`
+**Note:** To use older googleapi versions, such as `googleapis@24.0.0` try `decorated-google-drive@3`
 
-    npm i googleapis@24.0.0 -S
+    npm i googleapis@30.0.0 -S
     npm i request -S
     npm i decorated-google-drive -S
 
@@ -21,7 +31,7 @@ Pass the googleapis and request modules, and your keys and tokens. The `keys` ar
 The `tokens` are obtained when a user "Logs in with Google" in your app.  There is various middleware for "Log in with Google", such as
 `passport` for `express`, `grant` and `bell` for `hapi`, and even a client-Javascript side library you can get from Google.  
 
-    const googleapis = require('googleapis'); // worked with googleapis-22.20
+    const {google} = require('googleapis'); // works with googleapis-30.0.0
     const request = require('request'); // worked with request-2.83.0
     const driveX = require('decorated-google-drive');
     const keys = {
@@ -35,7 +45,7 @@ The `tokens` are obtained when a user "Logs in with Google" in your app.  There 
 	    access_token: "the-latest-access-token-your-app-received-the-most-recent-time-the-visitor-logged-in,
 		expiry_time: Date.now()+1000*60*59 // 59 minutes
     };
-	const drive = driveX(googleapis, request, keys, tokens); 
+	const drive = driveX(google, request, keys, tokens); 
 
 Now:
 * `drive` contains a googleapis.drive official client
@@ -45,7 +55,7 @@ Now:
 All extensions are written in terms of calls to `googleapis.drive`, it is simply that some of the techniques are tedious or less than obvious,
 and so it is useful to repackage these as extensions.
 
-The original drive client uses callbacks.  The `drive.x` extensions return Promises.
+Both the original drive client in `drive` and the `drive.x` extensions are async functions and return Promises.
 
 ### Decorate an existing vanilla googleapis.drive instance
 

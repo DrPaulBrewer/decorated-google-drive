@@ -4,7 +4,6 @@
 /* eslint-env: node */
 /* eslint max-params: "off" */
 
-const pify = require('pify');
 const pReduce = require('p-reduce');
 const Boom = require('boom');
 const digestStream = require('digest-stream');
@@ -37,10 +36,12 @@ function extensions(drive, request, rootFolderId, spaces) {
     });
     return allfields;
   }
+  
+  function getdata(resp){ return resp.data; }
 
-  function driveAboutMe(_fields) {
+  async function driveAboutMe(_fields) {
     const fields = _fields || "user,storageQuota";
-    return pify(drive.about.get)({ fields });
+    return drive.about.get({ fields }).then(getdata);
   }
 
   x.aboutMe = driveAboutMe;
@@ -63,7 +64,7 @@ function extensions(drive, request, rootFolderId, spaces) {
     if (!searchTerms.trashed)
       searchTerms.trashed = false;
 
-    return function (parent, name) {
+    return async function (parent, name) {
       const search = Object.assign({}, searchTerms, { parent, name });
       const searchString = ssgd(search, allowMatchAllFiles);
       const params = {
@@ -77,16 +78,13 @@ function extensions(drive, request, rootFolderId, spaces) {
 
       // see https://developers.google.com/drive/v3/web/search-parameters
 
-      return new Promise(function (resolve, reject) {
-        drive.files.list(params, function (err, resp) {
-          if (err) return reject(err);
-          // add isFolder boolean property to files, comparing mimeType to the Google Drive folder mimeType
-          if (Array.isArray(resp.files))
-            resp.files.forEach(addIsFolder);
-          const result = { parent, name, searchTerms, limit, unique, isSearchResult: true, files: resp.files };
-          return resolve(result);
-        });
-      });
+      const axiosresp = await drive.files.list(params);
+      const resp = getdata(axiosresp);
+      // add isFolder boolean property to files, comparing mimeType to the Google Drive folder mimeType
+      if (Array.isArray(resp.files))
+        resp.files.forEach(addIsFolder);
+      const result = { parent, name, searchTerms, limit, unique, isSearchResult: true, files: resp.files };
+      return result;
     };
   }
 
@@ -108,10 +106,10 @@ function extensions(drive, request, rootFolderId, spaces) {
   x.checkSearch = checkSearch;
 
   function driveJanitor(fileListProperty, successProperty) {
-    function deleteFile(file) {
-      return pify(drive.files.delete)({ fileId: file.id });
+    async function deleteFile(file) {
+      return drive.files.delete({ fileId: file.id }).then(getdata);
     }
-    return function (info) {
+    return async function (info) {
       if (successProperty) info[successProperty] = false;
       let files = (fileListProperty) ? info[fileListProperty] : info;
       if (files && files.id) files = [files];
@@ -123,30 +121,30 @@ function extensions(drive, request, rootFolderId, spaces) {
             return info;
           })
         );
-      return Promise.resolve(info);
+      return info;
     };
   }
 
   x.janitor = driveJanitor;
 
-  function getFolderId(folderIdOrObject) {
+  async function getFolderId(folderIdOrObject) {
     if (typeof(folderIdOrObject) === 'object') {
       if (folderIdOrObject.id) {
         if (folderIdOrObject.mimeType === folderMimeType)
-          return Promise.resolve(folderIdOrObject.id);
+          return folderIdOrObject.id;
       }
     }
     if (typeof(folderIdOrObject) === 'string') {
-      return Promise.resolve(folderIdOrObject);
+      return folderIdOrObject;
     }
-    return Promise.reject(Boom.badRequest(null, { folder: folderIdOrObject }));
+    throw Boom.badRequest(null, { folder: folderIdOrObject });
   }
 
   x.getFolderId = getFolderId;
 
   function driveStepRight() {
     const search = driveSearcher({ unique: true });
-    return function (folderIdOrObject, name) {
+    return async function (folderIdOrObject, name) {
       return (getFolderId(folderIdOrObject)
         .then((parentId) => (search(parentId, name)))
         .then(checkSearch)
@@ -160,7 +158,7 @@ function extensions(drive, request, rootFolderId, spaces) {
   // see https://developers.google.com/drive/v3/web/folder
 
   function driveFolderCreator() {
-    return function (f, name) {
+    return async function (f, name) {
       return (getFolderId(f)
         .then((parentFolderId) => {
           const mimeType = folderMimeType;
@@ -169,10 +167,10 @@ function extensions(drive, request, rootFolderId, spaces) {
             name,
             parents: [parentFolderId]
           };
-          return pify(drive.files.create)({
+          return drive.files.create({
             resource: metadata,
             fields: 'id, mimeType, name, parents'
-          }).then(addNew).then(addIsFolder);
+          }).then(getdata).then(addNew).then(addIsFolder);
         })
       );
     };
@@ -183,7 +181,7 @@ function extensions(drive, request, rootFolderId, spaces) {
   function driveFolderFactory() {
     const stepper = driveStepRight();
     const creator = driveFolderCreator();
-    return function (f, name) {
+    return async function (f, name) {
       return (stepper(f, name)
         .catch((e) => {
           if ((e.isBoom) && (e.typeof === Boom.notFound)) return creator(f, name);
@@ -195,7 +193,7 @@ function extensions(drive, request, rootFolderId, spaces) {
 
   x.folderFactory = driveFolderFactory;
 
-  function driveFindPath(path) {
+  async function driveFindPath(path) {
     const parts = path.split('/').filter((s) => (s.length > 0));
     const stepper = driveStepRight();
     return pReduce(parts, stepper, rootFolderId);
@@ -203,14 +201,14 @@ function extensions(drive, request, rootFolderId, spaces) {
 
   x.findPath = driveFindPath;
 
-  function driveContents(fileId, mimeType) {
-    const getFile = pify(drive.files.get)({ fileId, spaces, alt: 'media' });
+  async function driveContents(fileId, mimeType) {
+    const getFile = drive.files.get({ fileId, spaces, alt: 'media' }).then(getdata);
     if (!mimeType)
       return getFile;
     return (getFile
       .catch((e) => {
         if (e.toString().includes("Use Export"))
-          return (pify(drive.files.export)({ fileId, spaces, mimeType }));
+          return (drive.files.export({ fileId, spaces, mimeType }).then(getdata));
         throw e;
       })
     );
@@ -218,13 +216,13 @@ function extensions(drive, request, rootFolderId, spaces) {
 
   x.contents = driveContents;
 
-  function driveDownload(path, mimeType) {
+  async function driveDownload(path, mimeType) {
     return driveFindPath(path).then((file) => (driveContents(file.id, mimeType)));
   }
 
   x.download = driveDownload;
 
-  function driveCreatePath(path) {
+  async function driveCreatePath(path) {
     const parts = path.split('/').filter((s) => (s.length > 0));
     const dff = driveFolderFactory();
     return pReduce(parts, dff, rootFolderId);
@@ -232,9 +230,9 @@ function extensions(drive, request, rootFolderId, spaces) {
 
   x.createPath = driveCreatePath;
 
-  function driveUpdateMetadata(fileId, metadata) {
+  async function driveUpdateMetadata(fileId, metadata) {
     const fields = addFieldsFromKeys('id,name,mimeType,modifiedTime,size,parents', metadata);
-    return pify(drive.files.update)({ fileId, fields, resource: metadata });
+    return drive.files.update({ fileId, fields, resource: metadata }).then(getdata);
   }
 
   x.updateMetadata = driveUpdateMetadata;
@@ -256,27 +254,26 @@ function extensions(drive, request, rootFolderId, spaces) {
   x.nameFrom = nameFrom;
 
   // for url override see end of http://google.github.io/google-api-nodejs-client/22.2.0/index.html
+  
+  // legacy url: "https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable"
 
   function driveUploadDirector(parentFolderOrId) {
-    return function (metadata) {
+    const resumableUploadURL = "https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable";
+    return async function (metadata) {
       return (
         getFolderId(parentFolderOrId)
-        .then((parent) => (
-          new Promise(function (resolve, reject) {
+        .then((parent) => {
             const meta = Object.assign({}, metadata, { parents: [parent], spaces });
-            const req = drive.files.create({
+            return drive.files.create({
+              uploadType: 'resumable',
               resource: meta,
               fields: 'id,name,mimeType,md5Checksum,parents'
-            }, {
-              url: "https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable"
-            });
-            req.on('response', (response) => {
-              const url = response.headers.location;
-              resolve(url);
-            });
-            req.on('error', (e) => (reject(e)));
-          })
-        ))
+            },
+          {
+            url: resumableUploadURL
+          }).then((response)=>(response.headers.location));
+          }
+        )
       );
     };
   }
@@ -284,7 +281,7 @@ function extensions(drive, request, rootFolderId, spaces) {
   x.uploadDirector = driveUploadDirector;
 
   function streamToUrl(localStream, mimeType) {
-    return function (url) {
+    return async function (url) {
       if ((typeof(url) === "string") && (url.startsWith("https://"))) {
         const driveupload = {
           method: 'POST',
@@ -331,7 +328,7 @@ function extensions(drive, request, rootFolderId, spaces) {
 
   x.streamToUrl = streamToUrl;
 
-  function upload2({ folderPath, folderId, name, stream, mimeType, createPath, clobber }) {
+  async function upload2({ folderPath, folderId, name, stream, mimeType, createPath, clobber }) {
     function requireString(v, l, k) {
       if ((typeof(v) !== 'string') || (v.length < l))
         throw new Error("drive.x.upload2, invalid parameter " + k + ", requires string of length at least " + l + " chars");
