@@ -148,10 +148,11 @@ Drive retains the corrupted upload.
        clobber: true
        }).then((newFileMetaData)=>{...}).catch((e)=>{...});
        
-We haven't tried disrupting the upload and then trying to resume it.  It is done in one chunk and seems to deal
-with 5GB binary .zip files ok.
+We haven't tried disrupting the upload and then trying to resume it.  
 
-As of `decorated-google-drive:2.1.0` It is also possible to set `folderId` to a Drive folder.id string instead of setting `folderPath` to a path string.
+It seems to deal with 5GB binary .zip files ok.
+
+As of `decorated-google-drive:2.1.0` It is also possible to set `folderId` to a Drive `folder.id` string instead of setting `folderPath` to a path string.
 
 ### getting a URL for resumable upload later
 
