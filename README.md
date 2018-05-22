@@ -117,9 +117,11 @@ upload2 uses a resumable upload.
 
 A [media upload](https://developers.google.com/drive/v3/web/manage-uploads) using `drive.files.create` directly from the unextended drive googleapi might be quicker for short files up to 5MB.
 
-`drive.files.create` media upload requires having the `folder.Id` of the `parent` folder for the new file, here it is simply `appDataFolder`.  Also setting `spaces` to `appDataFolder` is required.
+`drive.files.create` media upload (not shown above) requires having the `folder.Id` of the `parent` folder for the new file, here it is simply `appDataFolder`.  Also setting `spaces` to `appDataFolder` is required.
 
-In `drive.x.appDataFolder.upload2` these steps are included but are used in a 2-step procedure to first request an upload URL, and then do an upload.
+In `drive.x.appDataFolder.upload2` (shown here) these steps are included. Internally, they are used in a 2-step procedure
+to first request an upload URL, and then do an upload.  This 2-step procedure is invisible to the developer, 
+but can be seen in the source code.
 
 
 ### upload a file to the user's Drive via resumable upload
@@ -147,7 +149,7 @@ Drive retains the corrupted upload.
        }).then((newFileMetaData)=>{...}).catch((e)=>{...});
        
 We haven't tried disrupting the upload and then trying to resume it.  It is done in one chunk and seems to deal
-with 50 Mb zip files ok.
+with 5GB binary .zip files ok.
 
 As of `decorated-google-drive:2.1.0` It is also possible to set `folderId` to a Drive folder.id string instead of setting `folderPath` to a path string.
 
@@ -196,7 +198,7 @@ call `drive.files.export` directly.
 	
 ### finding Paths with drive.x.findPath
 
-As of Oct 2017, the Google Drive REST API and googleapis.drive nodeJS libraries do not let you directly search for `/work/projectA/2012/Oct/customers/JoeSmith.txt`.  
+As of Oct 2017, the Google Drive REST API and googleapis.drive nodeJS libraries do not let you directly search for `/work/projectA/2012/Oct/customers/JoeSmith.txt`.  Therefore we provide an extension to do this search.
 
 The search can be done, by either searching for any file named JoeSmith.txt and possibly looking at duplicates, or by searching the root folder for `/work` then searching `/work` for `projectA`
 and continuing down the chain.  In the library, I wrote functional wrappers on `googleapis.drive` so that `findPath` becomes a functional Promise `p-reduce` of an appropriate folder search
