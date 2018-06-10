@@ -2,6 +2,11 @@
 
 Initialize googleapi's Google Drive[tm] nodejs client, decorated with some useful 3rd party extensions.
 
+## new in v4.3
+* the `drive.x.hexid()` formula was changed.  The new  `crypto.createHmac` formula is more secure, and effectively case insensitive
+as `.toLowerCase().trim()` is called on email strings before processing.  But it does yield different hex values than v4.2. 
+* the internal formula is now available as `drive.x.hexIdFromEmail(email,secret)` and does not call any Google drive functions
+
 ## new in v4.2
 * `drive.x.hexid()` returns a Promise resolving to a consistent 64 char hex id that is an anonymous pseudonym of the drive owner's email address.
 * you can enable `drive.x.hexid` by setting any string as the salt for the hexid sha256 hash when `driveX` is called to initialize.

@@ -47,17 +47,25 @@ function extensions(drive, request, rootFolderId, spaces, salt) {
 
   x.aboutMe = driveAboutMe;
   
+  function hexIdFromEmail(email, secret){
+    if (!secret) throw Boom.badImplementation("missing secret");
+    if (!crypto) throw Boom.badImplementation("missing crypto");
+    const standardizedEmail = email.toLowerCase().trim();
+    return (
+      crypto
+      .createHmac('sha256',secret)
+      .update(standardizedEmail, 'utf8')
+      .digest('hex')
+    );
+  }
+  
+  x.hexIdFromEmail = hexIdFromEmail;
+  
   async function driveHexid(){
       if (!salt) throw Boom.badImplementation("missing salt");
-      if (!crypto) throw Boom.badImplementation("missing crypto");
       const info = await driveAboutMe();
-      const salty = salt+(info.user.emailAddress.trim().replace('@','.'));
-      return (
-        crypto
-        .createHash('sha256')
-        .update(salty)
-        .digest('hex')
-      );
+      const email = info.user.emailAddress;
+      return hexIdFromEmail(email, salt);
   }
   
   x.hexid = driveHexid;
