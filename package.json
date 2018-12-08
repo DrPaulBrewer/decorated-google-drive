@@ -27,15 +27,15 @@
   "homepage": "https://github.com/DrPaulBrewer/decorated-google-drive#readme",
   "devDependencies": {
     "assert": "^1.4.1",
-    "eslint": "^4.19.1",
-    "googleapis": "^30.0.0",
+    "eslint": "^5.9.0",
+    "googleapis": "^36.0.0",
     "mocha": "^5.1.1",
-    "request": "^2.83.0",
-    "should": "^13.2.1",
-    "string-to-stream": "^1.1.0"
+    "request": "^2.88.0",
+    "should": "^13.2.3",
+    "string-to-stream": "^1.1.1"
   },
   "dependencies": {
-    "boom": "^7.1.1",
+    "boom": "^7.3.0",
     "digest-stream": "^2.0.0",
     "p-reduce": "^1.0.0",
     "search-string-for-google-drive": "^1.0.0"

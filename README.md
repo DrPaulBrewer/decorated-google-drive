@@ -2,6 +2,9 @@
 
 Initialize googleapi's Google Drive[tm] nodejs client, decorated with some useful 3rd party extensions.
 
+## new in v4.3.1
+* tested against googleapis@36.0.0
+
 ## new in v4.3
 * the `drive.x.hexid()` formula was changed.  The new  `crypto.createHmac` formula is more secure, and effectively case insensitive
 as `.toLowerCase().trim()` is called on email strings before processing.  But it does yield different hex values than v4.2. 
@@ -25,11 +28,11 @@ as `.toLowerCase().trim()` is called on email strings before processing.  But it
 
 ### Install
 
-Pre-requisites are `googleapis@30.0.0` and `request`
+Pre-requisites are `googleapis@36.0.0` and `request`
 
 **Note:** To use older googleapi versions, such as `googleapis@24.0.0` try `decorated-google-drive@3`
 
-    npm i googleapis@30.0.0 -S
+    npm i googleapis@36.0.0 -S
     npm i request -S
     npm i decorated-google-drive -S
 
@@ -40,7 +43,7 @@ Pass the googleapis and request modules, and your keys and tokens. The `keys` ar
 The `tokens` are obtained when a user "Logs in with Google" in your app.  There is various middleware for "Log in with Google", such as
 `passport` for `express`, `grant` and `bell` for `hapi`, and even a client-Javascript side library you can get from Google.  
 
-    const {google} = require('googleapis'); // works with googleapis-30.0.0
+    const {google} = require('googleapis'); // works with googleapis-36.0.0
     const request = require('request'); // worked with request-2.83.0
     const driveX = require('decorated-google-drive');
     const salt = "100% Organic Sea Salt, or some other string for salting the email addresses when making hexids";
