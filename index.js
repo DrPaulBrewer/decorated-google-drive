@@ -37,7 +37,7 @@ function extensions(drive, request, rootFolderId, spaces, salt) {
     });
     return allfields;
   }
-  
+
   function getdata(resp){ return resp.data; }
 
   async function driveAboutMe(_fields) {
@@ -46,7 +46,7 @@ function extensions(drive, request, rootFolderId, spaces, salt) {
   }
 
   x.aboutMe = driveAboutMe;
-  
+
   function hexIdFromEmail(email, secret){
     if (!secret) throw Boom.badImplementation("missing secret");
     if (!crypto) throw Boom.badImplementation("missing crypto");
@@ -58,16 +58,16 @@ function extensions(drive, request, rootFolderId, spaces, salt) {
       .digest('hex')
     );
   }
-  
+
   x.hexIdFromEmail = hexIdFromEmail;
-  
+
   async function driveHexid(){
       if (!salt) throw Boom.badImplementation("missing salt");
       const info = await driveAboutMe();
       const email = info.user.emailAddress;
       return hexIdFromEmail(email, salt);
   }
-  
+
   x.hexid = driveHexid;
 
   function driveSearcher(options) {
@@ -278,7 +278,7 @@ function extensions(drive, request, rootFolderId, spaces, salt) {
   x.nameFrom = nameFrom;
 
   // for url override see end of http://google.github.io/google-api-nodejs-client/22.2.0/index.html
-  
+
   // legacy url: "https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable"
 
   function driveUploadDirector(parentFolderOrId) {
@@ -400,10 +400,11 @@ function extensions(drive, request, rootFolderId, spaces, salt) {
   return x;
 }
 
-function decorate(drive, request, salt) {
+function decorate(drive, auth, request, salt) {
   // drive is delivered from googleapis frozen, so we'll refreeze after adding extensions
   const extras = {};
   extras.x = extensions(drive, request, 'root', 'drive', salt);
+  if (auth) extras.x.auth = auth;
   extras.x.appDataFolder = extensions(drive, request, 'appDataFolder', 'appDataFolder', salt);
   return Object.freeze(Object.assign({}, drive, extras));
 }
@@ -428,7 +429,7 @@ function decoratedGoogleDrive(googleapis, request, keys, tokens, salt) {
   const drive = googleapis.drive({ version: 'v3', auth });
   if (typeof(drive) !== 'object')
     throw Boom.badImplementation("drive is not an object, got: " + typeof(drive));
-  return decorate(drive, request, salt);
+  return decorate(drive, auth, request, salt);
 }
 
 decoratedGoogleDrive.decorate = decorate;
