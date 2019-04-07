@@ -38,6 +38,6 @@
     "boom": "^7.3.0",
     "p-reduce": "^1.0.0",
     "search-string-for-google-drive": "^1.0.0",
-    "uploader-for-google-drive-resumable-upload-url": "^0.1.1"
+    "uploader-for-google-drive-resumable-upload-url": "^1.0.0"
   }
 }
