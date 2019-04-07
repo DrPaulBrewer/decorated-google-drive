@@ -73,7 +73,7 @@ return Promise.all([
 should return a 64 char hex id.
 
 ```js
-async function (){
+async function(){
       const hex = await drive.x.hexid();
       return hex.should.match(sha256Regex);
     }
@@ -82,7 +82,7 @@ async function (){
 should consistently return the same 64 char hex when called 3 times.
 
 ```js
-async function (){
+async function(){
       return Promise
         .all([drive.x.hexid(), drive.x.hexid(), drive.x.hexid()])
         .then(([a,b,c])=>{

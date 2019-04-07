@@ -1,6 +1,6 @@
 {
   "name": "decorated-google-drive",
-  "version": "5.0.0",
+  "version": "5.1.0",
   "description": "decorate googleapi's Google Drive[tm] client with some useful extensions",
   "main": "index.js",
   "scripts": {
@@ -27,7 +27,7 @@
   "homepage": "https://github.com/DrPaulBrewer/decorated-google-drive#readme",
   "devDependencies": {
     "assert": "^1.4.1",
-    "eslint": "^5.9.0",
+    "eslint": "^5.16.0",
     "googleapis": "^36.0.0",
     "mocha": "^5.1.1",
     "request": "^2.88.0",
@@ -36,8 +36,8 @@
   },
   "dependencies": {
     "boom": "^7.3.0",
-    "digest-stream": "^2.0.0",
     "p-reduce": "^1.0.0",
-    "search-string-for-google-drive": "^1.0.0"
+    "search-string-for-google-drive": "^1.0.0",
+    "uploader-for-google-drive-resumable-upload-url": "^0.1.1"
   }
 }

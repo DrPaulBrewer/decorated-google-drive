@@ -6,9 +6,9 @@
 
 const pReduce = require('p-reduce');
 const Boom = require('boom');
-const digestStream = require('digest-stream');
 const ssgd = require('search-string-for-google-drive');
 const crypto = require('crypto');
+const upload = require('uploader-for-google-drive-resumable-upload-url');
 
 const folderMimeType = 'application/vnd.google-apps.folder';
 
@@ -38,7 +38,7 @@ function extensions(drive, request, rootFolderId, spaces, salt) {
     return allfields;
   }
 
-  function getdata(resp){ return resp.data; }
+  function getdata(resp) { return resp.data; }
 
   async function driveAboutMe(_fields) {
     const fields = _fields || "user,storageQuota";
@@ -47,13 +47,13 @@ function extensions(drive, request, rootFolderId, spaces, salt) {
 
   x.aboutMe = driveAboutMe;
 
-  function hexIdFromEmail(email, secret){
+  function hexIdFromEmail(email, secret) {
     if (!secret) throw Boom.badImplementation("missing secret");
     if (!crypto) throw Boom.badImplementation("missing crypto");
     const standardizedEmail = email.toLowerCase().trim();
     return (
       crypto
-      .createHmac('sha256',secret)
+      .createHmac('sha256', secret)
       .update(standardizedEmail, 'utf8')
       .digest('hex')
     );
@@ -61,11 +61,11 @@ function extensions(drive, request, rootFolderId, spaces, salt) {
 
   x.hexIdFromEmail = hexIdFromEmail;
 
-  async function driveHexid(){
-      if (!salt) throw Boom.badImplementation("missing salt");
-      const info = await driveAboutMe();
-      const email = info.user.emailAddress;
-      return hexIdFromEmail(email, salt);
+  async function driveHexid() {
+    if (!salt) throw Boom.badImplementation("missing salt");
+    const info = await driveAboutMe();
+    const email = info.user.emailAddress;
+    return hexIdFromEmail(email, salt);
   }
 
   x.hexid = driveHexid;
@@ -287,17 +287,15 @@ function extensions(drive, request, rootFolderId, spaces, salt) {
       return (
         getFolderId(parentFolderOrId)
         .then((parent) => {
-            const meta = Object.assign({}, metadata, { parents: [parent], spaces });
-            return drive.files.create({
-              uploadType: 'resumable',
-              resource: meta,
-              fields: 'id,name,mimeType,md5Checksum,parents'
-            },
-          {
+          const meta = Object.assign({}, metadata, { parents: [parent], spaces });
+          return drive.files.create({
+            uploadType: 'resumable',
+            resource: meta,
+            fields: 'id,name,mimeType,md5Checksum,parents'
+          }, {
             url: resumableUploadURL
-          }).then((response)=>(response.headers.location));
-          }
-        )
+          }).then((response) => (response.headers.location));
+        })
       );
     };
   }
@@ -306,98 +304,67 @@ function extensions(drive, request, rootFolderId, spaces, salt) {
 
   function streamToUrl(localStream, mimeType) {
     return async function (url) {
-      if ((typeof(url) === "string") && (url.startsWith("https://"))) {
-        const driveupload = {
-          method: 'POST',
-          uri: url,
-          headers: {
-            'Content-Type': mimeType
-          }
-        };
-        return new Promise(function (resolve, reject) {
-          let md5, length; // eslint-disable-line no-unused-vars
-          const md5buddy = digestStream('md5', 'hex', function (_md5, _length) {
-            md5 = _md5;
-            length = _length;
-          });
-          const uploadRequest = request(driveupload, (err, httpIncomingMessage, response) => {
-            if (err) return reject(err);
-            let result;
-            if (typeof(response) === 'string') {
-              try {
-                result = JSON.parse(response);
-              } catch (e) { result = response; }
-            } else {
-              result = response;
-            }
-            if ((!mimeType) || (!mimeType.startsWith('text'))) {
-              // check md5 only on binary data, and only if reported back by Google Drive API
-              if ((result && result.md5Checksum)) {
-                result.ourMD5 = md5; // set ours here too
-                if (md5 !== result.md5Checksum) {
-                  reject(Boom.badImplementation('bad md5 checksum on upload to Google Drive', result));
-                }
-              }
-            }
-            addNew(result);
-            addIsFolder(result);
-            resolve(result);
-          });
-          localStream.pipe(md5buddy).pipe(uploadRequest);
-        });
-      }
-      return Promise.reject("drive.x.streamToUrl: not a valid https url");
+      const params = {
+        sourceStream: localStream,
+        mimeType,
+        url,
+        request
+      };
+      const result = await(upload(params));
+      addNew(result);
+      addIsFolder(result);
+      return result;
     };
   }
 
-  x.streamToUrl = streamToUrl;
+x.streamToUrl = streamToUrl;
 
-  async function upload2({ folderPath, folderId, name, stream, mimeType, createPath, clobber }) {
-    function requireString(v, l, k) {
-      if ((typeof(v) !== 'string') || (v.length < l))
-        throw new Error("drive.x.upload2, invalid parameter " + k + ", requires string of length at least " + l + " chars");
-    }
-    requireString(name, 1, 'name');
-    requireString(mimeType, 1, 'mimeType');
-    if (folderPath && folderId) throw Boom.badRequest("bad request, specify folderPath or folderId, not both");
-    const findAll = driveSearcher({});
-    const getFolder = (createPath) ? (driveCreatePath(folderPath)) : ((folderId && Promise.resolve(folderId)) || driveFindPath(folderPath));
+async function upload2({ folderPath, folderId, name, stream, mimeType, createPath, clobber }) {
+  function requireString(v, l, k) {
+    if ((typeof(v) !== 'string') || (v.length < l))
+      throw new Error("drive.x.upload2, invalid parameter " + k + ", requires string of length at least " + l + " chars");
+  }
+  requireString(name, 1, 'name');
+  requireString(mimeType, 1, 'mimeType');
+  if (folderPath && folderId) throw Boom.badRequest("bad request, specify folderPath or folderId, not both");
+  const findAll = driveSearcher({});
+  const getFolder = (createPath) ? (driveCreatePath(folderPath)) : ((folderId && Promise.resolve(folderId)) || driveFindPath(folderPath));
 
-    function go({ parent }) {
-      if (parent === undefined) throw Boom.badImplementation("parent undefined");
-      const pUploadUrl = driveUploadDirector(parent);
-      return (
-        pUploadUrl({ name, mimeType })
-        .then(streamToUrl(stream, mimeType))
-      );
-    }
-
-    const common = (getFolder
-      .then(getFolderId)
-      .then((parent) => (findAll(parent, name)))
-    );
-
-    if (clobber) {
-      const janitor = driveJanitor('files');
-      return (common
-        .then(janitor)
-        .then(go)
-      );
-    }
-
-    return (common
-      .then(({ parent, files }) => {
-        if (files.length > 0)
-          throw Boom.conflict('file exists');
-        return go({ parent });
-      })
+  function go({ parent }) {
+    if (parent === undefined) throw Boom.badImplementation("parent undefined");
+    const pUploadUrl = driveUploadDirector(parent);
+    return (
+      pUploadUrl({ name, mimeType })
+      .then(streamToUrl(stream, mimeType))
     );
   }
 
+  const common = (getFolder
+    .then(getFolderId)
+    .then((parent) => (findAll(parent, name)))
+  );
 
-  x.upload2 = upload2;
+  if (clobber) {
+    const janitor = driveJanitor('files');
+    return (common
+      .then(janitor)
+      .then(go)
+    );
+  }
 
-  return x;
+  return (common
+    .then(({ parent, files }) => {
+      if (files.length > 0)
+        throw Boom.conflict('file exists');
+      return go({ parent });
+    })
+  );
+}
+
+
+x.upload2 = upload2;
+
+return x;
 }
 
 function decorate(drive, auth, request, salt) {
