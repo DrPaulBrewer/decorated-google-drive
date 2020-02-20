@@ -2,6 +2,11 @@
 
 Initialize googleapi's Google Drive[tm] nodejs client, decorated with some useful 3rd party extensions.
 
+## new in v5.4.0
+* path traversal now uses search option 'recent' and will find the most recent file
+* it is better behaved in the case of multiple files with the same name
+* issues can arise if a user creates a file with the same name as an existing app folder
+
 ## new in v5.3.0
 * tested against googleapis@47.0.0
 
@@ -149,7 +154,7 @@ To replace an existing file, set `clobber:true`, otherwise it may throw a `Boom.
 Post-upload checksums reported by Google Drive API are used to guarantee fidelity for **binary** file uploads. A binary file
 is any non-text file.  The md5 checksum computed from the file stream is reported as `ourMD5` in the `newFileMetaData`
 and the md5 checksum computed by Google is reported as `md5Checksum` in the `newFileMetaData`.  When there is a mismatch
-on a binary file the code will throw `Boom.badImplementation`, which you can catch, and any recovery should assume that Google
+on a binary file the code will throw `Boom.badImplementation`, which you can catch, and any recovery should check if Google
 Drive retains the corrupted upload.
 
 
@@ -231,16 +236,14 @@ where `{...}` is your code that needs `fileMetaData`.  The resolved data looks l
 	   size: 21398 // size in Drive, may not equal number of bytes in file
 	}
 
-Additionally, `findPath` can fail with a rejected Promise.  `npm:boom` is used for errors our code throws.  You can also
-get errors thrown by the googleapis code.
+Additionally, `findPath` can fail with a rejected Promise.  
+`npm:boom` is used for errors our code throws.  
+You can also get errors thrown by the googleapis code.
 
 To catch file not found:
 
     .catch( (e)=>{  if (e.isBoom && e.typeof===Boom.notFound) return your_file_not_found_handler(e); throw e; } )
 
-To catch two or more files with same name:
-
-    .catch( (e)=>{  if (e.isBoom && e.typeof===Boom.expectationFailed) return your_duplicate_file_handler(e); throw e; })
 
 ### searching folders with drive.x.searcher
 
@@ -286,7 +289,12 @@ You can restrict mimeType or require a unique (single) file in the searcher para
 		.then(({ files })=>{...})
 		)
 
-`unique:true` sets `limit:2` so is not in fact unique but instead returns 2 files quickly.  You can enforce uniqueness, thowing Boom errors, by calling
+`recent:true` sets `limit:1` and `orderby:'modifiedTime desc'` so that the most
+recently created/modified file will be returned.
+
+`unique:true` sets `limit:2` so is not in fact unique but instead returns 2 files quickly.  
+
+You can enforce uniqueness, thowing Boom errors, by calling
 `drive.x.checkSearch` on the search results.  Successful searches are passed to the next `then()` and searches with missing files or duplicates
 throw errors.  (see `drive.x.findPath` above for a descrption of these Boom errors and how to catch them).
 

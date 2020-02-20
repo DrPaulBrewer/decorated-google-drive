@@ -73,8 +73,14 @@ function extensions(drive, request, rootFolderId, spaces, salt) {
   function driveSearcher(options) {
     let limit = (options.limit || 1000);
     let fields = options.fields || 'id,name,mimeType,modifiedTime,size,parents';
+    let orderBy = options.orderby || 'folder,name,modifiedTime desc';
     const unique = options.unique;
     if (unique) limit = 2;
+    const recent = options.recent;
+    if (recent) {
+      limit = 1;
+      orderBy = 'modifiedTime desc';
+    }
     const allowMatchAllFiles = options.allowMatchAllFiles;
     const searchTerms = ssgd.extract(options);
 
@@ -96,7 +102,7 @@ function extensions(drive, request, rootFolderId, spaces, salt) {
         q: searchString,
         pageSize: limit,
         maxResults: limit,
-        orderBy: "folder,name,modifiedTime desc",
+        orderBy,
         fields: `files(${fields})`
       };
 
@@ -107,7 +113,7 @@ function extensions(drive, request, rootFolderId, spaces, salt) {
       // add isFolder boolean property to files, comparing mimeType to the Google Drive folder mimeType
       if (Array.isArray(resp.files))
         resp.files.forEach(addIsFolder);
-      const result = { parent, name, searchTerms, limit, unique, isSearchResult: true, files: resp.files };
+      const result = { parent, name, searchTerms, limit, unique, recent, isSearchResult: true, files: resp.files };
       return result;
     };
   }
@@ -167,7 +173,7 @@ function extensions(drive, request, rootFolderId, spaces, salt) {
   x.getFolderId = getFolderId;
 
   function driveStepRight() {
-    const search = driveSearcher({ unique: true });
+    const search = driveSearcher({ recent: true });
     return async function (folderIdOrObject, name) {
       return (getFolderId(folderIdOrObject)
         .then((parentId) => (search(parentId, name)))
