@@ -6,33 +6,33 @@
       ✓ drive should not be undefined
       ✓ drive.x should be an object
      drive.x.aboutMe 
-      ✓ should return the test users email address (541ms)
-      ✓ should return a storageQuota object with properties limit, usage (164ms)
-      ✓ drive.about.get still works, as well, and the outputs match (171ms)
+      ✓ should return the test users email address (180ms)
+      ✓ should return a storageQuota object with properties limit, usage (169ms)
+      ✓ drive.about.get still works, as well, and the outputs match (135ms)
      drive.x.hexid 
-      ✓ should return a 64 char hex id (175ms)
-      ✓ should consistently return the same 64 char hex when called 3 times (266ms)
+      ✓ should return a 64 char hex id (134ms)
+      ✓ should consistently return the same 64 char hex when called 3 times (143ms)
      drive.x.appDataFolder.upload2: upload a string to appDataFolder 
       ✓ uploading the string to appDataFolder file myaccount should resolve with expected file metadata
       ✓ drive.x.appDataFolder.searcher should report there is exactly one myaccount file in the folder and it should match upload file id
       ✓ drive.x.appDataFolder.contents should resolve to contents Hello-World-Test-1-2-3
      drive.x.upload2: upload a file README.md to Drive folder /path/to/test/Files
       ✓ uploading the README.md file to /path/to/test/Files/README.md should resolve with expected file metadata
-      ✓ the parents[0] folder should have the name 'Files' (283ms)
-      ✓ searching the parents[0] folder for README.md find a file with matching id (262ms)
+      ✓ the parents[0] folder should have the name 'Files' (145ms)
+      ✓ searching the parents[0] folder for README.md find a file with matching id (217ms)
      after drive.x.upload2 
-      ✓ searching root for anything should yield folder 'path' with .isFolder===true (256ms)
-      ✓ searching root for folders should yield folder 'path' with .isFolder===true (288ms)
-      ✓ searching root for non-folders should be empty  (266ms)
-      ✓ searching all folders for any non-trashed file should be non-empty and include file README.md in results  (250ms)
-      ✓ searching all folders or a file with appProperties: { 'role': 'documentation' } should be empty  (237ms)
-      ✓ checking existence of /path/to/test/Files/README.md with drive.x.findPath should yield expected file metadata (1329ms)
-      ✓ checking existence of /path/to/test should yield expected folder metadata (786ms)
-      ✓ checking existence on wrong path should throw Boom.notfound (235ms)
-      ✓ downloading content with drive.x.download should yield contents string including 'License: MIT' (1781ms)
-      ✓ updating README.md appProperties to {'role': 'documentation'} should succeed (2116ms)
-      ✓ searching all folders or a file with appProperties: { 'role': 'documentation' } should find README.md  (252ms)
-      ✓ drive.x.upload2 uploading the file again with {clobber:false} will throw Boom.conflict error because file already exists (1359ms)
+      ✓ searching root for anything should yield folder 'path' with .isFolder===true (195ms)
+      ✓ searching root for folders should yield folder 'path' with .isFolder===true (275ms)
+      ✓ searching root for non-folders should be empty  (1951ms)
+      ✓ searching all folders for any non-trashed file should be non-empty and include file README.md in results  (278ms)
+      ✓ searching all folders or a file with appProperties: { 'role': 'documentation' } should be empty  (175ms)
+      ✓ checking existence of /path/to/test/Files/README.md with drive.x.findPath should yield expected file metadata (1085ms)
+      ✓ checking existence of /path/to/test should yield expected folder metadata (790ms)
+      ✓ checking existence on wrong path should throw Boom.notfound (182ms)
+      ✓ downloading content with drive.x.download should yield contents string including 'License: MIT' (1262ms)
+      ✓ updating README.md appProperties to {'role': 'documentation'} should succeed (1719ms)
+      ✓ searching all folders or a file with appProperties: { 'role': 'documentation' } should find README.md  (215ms)
+      ✓ drive.x.upload2 uploading the file again with {clobber:false} will throw Boom.conflict error because file already exists (1327ms)
      drive.x.upload2: upload test/test.zip to Drive folder /path/to/test/Files
       ✓ uploading the test.zip file to /path/to/test/Files/test.zip should resolve with expected file metadata and md5 match
      create folder /path/to/test2 
@@ -46,12 +46,12 @@
      use folderId of /path/to/test2 to upload test.zip 
       ✓ uploading the test.zip file to /path/to/test2/test.zip should resolve with expected file metadata and md5 match
      cleanup via drive.x.janitor 
-      ✓ janitor hopefully deletes the README.md file(s) OK and resolves correctly (1746ms)
-      ✓ drive.x.findPath will throw Boom.notFound if the file was successfully deleted (1257ms)
-      ✓ janitor will throw an error if told to delete an invalid file (162ms)
+      ✓ janitor hopefully deletes the README.md file(s) OK and resolves correctly (1518ms)
+      ✓ drive.x.findPath will throw Boom.notFound if the file was successfully deleted (1164ms)
+      ✓ janitor will throw an error if told to delete an invalid file (93ms)
       ✓ janitor should not throw an error if given an empty filelist
-      ✓ final cleanup: delete the path folder and check non-existence (1325ms)
+      ✓ final cleanup: delete the path folder and check non-existence (923ms)
 
 
-  40 passing (27s)
+  40 passing (25s)
 

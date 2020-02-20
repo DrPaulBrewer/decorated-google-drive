@@ -2,6 +2,9 @@
 
 Initialize googleapi's Google Drive[tm] nodejs client, decorated with some useful 3rd party extensions.
 
+## new in v5.3.0
+* tested against googleapis@47.0.0
+
 ## new in v5.0.0
 * `drive.x.auth` contains a reference to the OAuth2 credentials object.  For insecure applications, this should be deleted with `del drive.x.auth;`.
 
