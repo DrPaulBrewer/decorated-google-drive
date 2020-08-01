@@ -50,7 +50,7 @@ Pre-requisites are `googleapis@58.0.0` and `axios`
 
 
     npm i googleapis@58.0.0 -S
-    npm i request -S
+    npm i axios -S
     npm i decorated-google-drive -S
 
 ### Initialize
@@ -63,21 +63,21 @@ The `tokens` are obtained when a user "Logs in with Google" in your app.  There 
 `passport` for `express`, `grant` and `bell` for `hapi`, and even a client-Javascript side library you can get from Google.  
 
     const {google} = require('googleapis'); // works with googleapis-58.0.0
-    const request = require('axios'); // worked with axios-0.19.2
+    const axios = require('axios'); // worked with axios-0.19.2
     const driveX = require('decorated-google-drive');
     const salt = "100% Organic Sea Salt, or some other string for salting the email addresses when making hexids";
     const keys = {
-		key:  "your-drive-api-key-goes-here",
-		secret: "your-drive-api-secret-goes-here",
-		redirect: "https://yourhost.com/your/apps/google/redirect/url"
-	};
-	// refresh_token is optional, but if present googleapis should automatically refresh access_token for you
-	const tokens = {
-		refresh_token: "the-refresh-token-your-app-received-the-first-time-a-new-visitor-approved-your-app",
+  		key:  "your-drive-api-key-goes-here",
+	  	secret: "your-drive-api-secret-goes-here",
+		  redirect: "https://yourhost.com/your/apps/google/redirect/url"
+	  };
+	  // refresh_token is optional, but if present googleapis should automatically refresh access_token for you
+	  const tokens = {
+		  refresh_token: "the-refresh-token-your-app-received-the-first-time-a-new-visitor-approved-your-app",
 	    access_token: "the-latest-access-token-your-app-received-the-most-recent-time-the-visitor-logged-in,
-		expiry_time: Date.now()+1000*60*59 // 59 minutes
+		  expiry_time: Date.now()+1000*60*59 // 59 minutes
     };
-	const drive = driveX({google, axios, keys, tokens, salt});
+	  const drive = driveX({google, axios, keys, tokens, salt});
 
 Now:
 * `drive` contains a googleapis.drive official client
@@ -195,7 +195,7 @@ and then
 
     getUploadUrlForFile({name: 'hello.txt', mimeType: 'text/plain'})
 
-will resolve to some Google uploader URL that you can post to with `npm:request`
+will resolve to some Google uploader URL that you can post to with `npm:axios`
 
 ### Download a file knowing only the /path/to/file
 
