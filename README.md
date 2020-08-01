@@ -2,6 +2,13 @@
 
 Initialize googleapi's Google Drive[tm] nodejs client, decorated with some useful 3rd party extensions.
 
+## new in v6.0.0 -- BREAKING CHANGES
+* initialization has changed
+* provided methods and testing is (mostly) the same
+* initialization uses object parameters
+* replaced `request` peer dependency with `axios`
+* tested against googleapis@58.0.0
+
 ## new in v5.4.0
 * path traversal now uses search option 'recent' and will find the most recent file
 * it is better behaved in the case of multiple files with the same name
@@ -39,23 +46,24 @@ as `.toLowerCase().trim()` is called on email strings before processing.  But it
 
 ### Install
 
-Pre-requisites are `googleapis@36.0.0` and `request`
+Pre-requisites are `googleapis@58.0.0` and `axios`
 
-**Note:** To use older googleapi versions, such as `googleapis@24.0.0` try `decorated-google-drive@3`
 
-    npm i googleapis@36.0.0 -S
+    npm i googleapis@58.0.0 -S
     npm i request -S
     npm i decorated-google-drive -S
 
 ### Initialize
 
-Pass the googleapis and request modules, and your keys and tokens. The `keys` are obtained from the Google API credentials console.
+Updated for v6.0
+
+Pass the google object from initializing googleapis and pass the axios module, your keys and tokens. The `keys` are obtained from the Google API credentials console.
 
 The `tokens` are obtained when a user "Logs in with Google" in your app.  There is various middleware for "Log in with Google", such as
 `passport` for `express`, `grant` and `bell` for `hapi`, and even a client-Javascript side library you can get from Google.  
 
-    const {google} = require('googleapis'); // works with googleapis-36.0.0
-    const request = require('request'); // worked with request-2.83.0
+    const {google} = require('googleapis'); // works with googleapis-58.0.0
+    const request = require('axios'); // worked with axios-0.19.2
     const driveX = require('decorated-google-drive');
     const salt = "100% Organic Sea Salt, or some other string for salting the email addresses when making hexids";
     const keys = {
@@ -69,7 +77,7 @@ The `tokens` are obtained when a user "Logs in with Google" in your app.  There 
 	    access_token: "the-latest-access-token-your-app-received-the-most-recent-time-the-visitor-logged-in,
 		expiry_time: Date.now()+1000*60*59 // 59 minutes
     };
-	const drive = driveX(google, request, keys, tokens, salt);
+	const drive = driveX({google, axios, keys, tokens, salt});
 
 Now:
 * `drive` contains a googleapis.drive official client
@@ -85,9 +93,10 @@ Both the original drive client in `drive` and the `drive.x` extensions are async
 
 This should work in cases where `drive` already exists and has credentials.
 
-	 const request = require('request');
+	 const axios = require('axios');
 	 const driveX = require('decorated-google-drive');
-	 const ddrive = driveX.decorate(drive, request);
+   const salt = 'saltIsGoodForYourHexids';
+	 const ddrive = driveX.decorate({drive, axios, salt});
 
 Now the extensions are available in `ddrive.x` and `ddrive.x.appDataFolder`
 
@@ -99,9 +108,7 @@ How do you know a token is valid?
 
 One way to verify tokens is to get the profile of the current user.  
 
-The Google Drive REST API `/about` is much shorter than the Google Plus Profile.  The reduced information is sufficient for populating simple apps and may be privacy-enhancing
-compared with accessing public Google Plus profiles. Basically, Drive will tell you the user's email address, picture thumbnail, and the capacity and usage of their drive,
-whereas with Google Plus you can everything someone reveals on their public Google Profile. While marketing often favors the latter, privacy favors the former.  
+The Google Drive REST API `/about` will tell you the user's email address, picture thumbnail, and the capacity and usage of their drive.
 
 Here is code to fetch the logged in user's email address.  
 
@@ -110,8 +117,7 @@ Here is code to fetch the logged in user's email address.
 Once you have verified that a set of tokens work, you should encrypt them and store them someplace safe, where your app can get them when a user takes an action.
 `access_token` expires, and usually has a time to live of 1 hour.  It is refreshed by `googleapis` using the `refresh_token`.
 
-An obvious place is an encrypted browser cookie.  Of these, the `refresh_token` is only delivered once, the first time a user logs into google and approves your app,
-and is *not delivered on subsequent logins*. If you encrypt it and store it in a database, then your database, along with the keys, becomes a treasure-trove.  You can
+An obvious place is an encrypted browser cookie.  Of these, the `refresh_token` is only delivered once, the first time a user logs into google and approves your app, and is *not delivered on subsequent logins*. If you encrypt it and store it in a database, then your database, along with the keys, becomes a treasure-trove.  You can
 avoid doing that by either throwing away the `refresh_token` and living with the 1 hour timeouts, or by storing an encrypted copy of the `refresh_token` in the users
 Drive.  The `appDataFolder` is useful for this.  It is a special folder that is stored in the user's Drive for each app, and hidden from the user. The entire `appDataFolder`
 is deleted when a user uninstalls or deletes your app.
@@ -134,7 +140,7 @@ Once initialized, this snippet will store a string in the file `myaccount` in th
 
 upload2 uses a resumable upload.  
 
-A [media upload](https://developers.google.com/drive/v3/web/manage-uploads) using `drive.files.create` directly from the unextended drive googleapi might be quicker for short files up to 5MB.
+A [media upload](https://developers.google.com/drive/v3/web/manage-uploads) using `drive.files.create` directly from the unextended drive googleapi might be quicker for short files up to a few MB.
 
 `drive.files.create` media upload (not shown above) requires having the `folder.Id` of the `parent` folder for the new file, here it is simply `appDataFolder`.  Also setting `spaces` to `appDataFolder` is required.
 
@@ -151,7 +157,9 @@ To create missing intermediate folders, set `createPath:true`, otherwise it may 
 
 To replace an existing file, set `clobber:true`, otherwise it may throw a `Boom.conflict`, which you can catch.
 
-Post-upload checksums reported by Google Drive API are used to guarantee fidelity for **binary** file uploads. A binary file
+Post-upload checksums reported by Google Drive API are used to guarantee fidelity for **binary** file uploads.
+
+A binary file
 is any non-text file.  The md5 checksum computed from the file stream is reported as `ourMD5` in the `newFileMetaData`
 and the md5 checksum computed by Google is reported as `md5Checksum` in the `newFileMetaData`.  When there is a mismatch
 on a binary file the code will throw `Boom.badImplementation`, which you can catch, and any recovery should check if Google
