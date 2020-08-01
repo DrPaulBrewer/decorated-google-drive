@@ -3,7 +3,7 @@
      - [ initializing ](#decorated-google-drive-initializing-)
      - [ drive.x.aboutMe ](#decorated-google-drive-drivexaboutme-)
      - [ drive.x.hexid ](#decorated-google-drive-drivexhexid-)
-     - [ drive.x.appDataFolder.upload2: upload a string to appDataFolder ](#decorated-google-drive-drivexappdatafolderupload2-upload-a-string-to-appdatafolder-)
+     - [ drive.x.appDataFolder.upload2: upload a string ...-1-2-3 to appDataFolder ](#decorated-google-drive-drivexappdatafolderupload2-upload-a-string-1-2-3-to-appdatafolder-)
      - [ drive.x.upload2: upload a file README.md to Drive folder /path/to/test/Files](#decorated-google-drive-drivexupload2-upload-a-file-readmemd-to-drive-folder-pathtotestfiles)
      - [ after drive.x.upload2 ](#decorated-google-drive-after-drivexupload2-)
      - [ drive.x.upload2: upload test/test.zip to Drive folder /path/to/test/Files](#decorated-google-drive-drivexupload2-upload-testtestzip-to-drive-folder-pathtotestfiles)
@@ -20,7 +20,7 @@ should not throw an error.
 
 ```js
 function init() {
-  drive = driveZ(google, request, keys, tokens, salt);
+  drive = driveZ({google, axios, keys, tokens, salt});
 }
 init.should.not.throw();
 ```
@@ -93,8 +93,8 @@ async function(){
     }
 ```
 
-<a name="decorated-google-drive-drivexappdatafolderupload2-upload-a-string-to-appdatafolder-"></a>
-##  drive.x.appDataFolder.upload2: upload a string to appDataFolder 
+<a name="decorated-google-drive-drivexappdatafolderupload2-upload-a-string-1-2-3-to-appdatafolder-"></a>
+##  drive.x.appDataFolder.upload2: upload a string ...-1-2-3 to appDataFolder 
 uploading the string to appDataFolder file myaccount should resolve with expected file metadata.
 
 ```js

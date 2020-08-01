@@ -12,7 +12,7 @@ const upload = require('uploader-for-google-drive-resumable-upload-url');
 
 const folderMimeType = 'application/vnd.google-apps.folder';
 
-function extensions(drive, request, rootFolderId, spaces, salt) {
+function extensions({drive, axios, rootFolderId, spaces, salt}) {
   const x = {};
 
   function addNew(meta) {
@@ -314,7 +314,7 @@ function extensions(drive, request, rootFolderId, spaces, salt) {
         sourceStream: localStream,
         mimeType,
         url,
-        request
+        axios
       };
       const result = await(upload(params));
       addNew(result);
@@ -373,23 +373,23 @@ x.upload2 = upload2;
 return x;
 }
 
-function decorate(drive, auth, request, salt) {
+function decorate({drive, auth, axios, salt}) {
   // drive is delivered from googleapis frozen, so we'll refreeze after adding extensions
   const extras = {};
-  extras.x = extensions(drive, request, 'root', 'drive', salt);
+  extras.x = extensions({drive, axios, rootFolderId:'root', spaces:'drive', salt});
   if (auth) extras.x.auth = auth;
-  extras.x.appDataFolder = extensions(drive, request, 'appDataFolder', 'appDataFolder', salt);
+  extras.x.appDataFolder = extensions({drive, axios, rootFolderId:'appDataFolder', spaces:'appDataFolder', salt});
   return Object.freeze(Object.assign({}, drive, extras));
 }
 
-function decoratedGoogleDrive(googleapis, request, keys, tokens, salt) {
-  if (!googleapis)
-    throw Boom.badImplementation("googleapis not defined");
-  if (!googleapis.auth)
-    throw Boom.badImplementation("googleapis.auth not defined");
-  if (!googleapis.auth.OAuth2)
-    throw Boom.badImplementation("googleapis.auth.OAuth2 not defined");
-  const OAuth2 = googleapis.auth.OAuth2;
+function decoratedGoogleDrive({google, axios, keys, tokens, salt}) {
+  if (!google)
+    throw Boom.badImplementation("google not defined");
+  if (!google.auth)
+    throw Boom.badImplementation("google.auth not defined");
+  if (!google.auth.OAuth2)
+    throw Boom.badImplementation("google.auth.OAuth2 not defined");
+  const OAuth2 = google.auth.OAuth2;
   const auth = new OAuth2(keys.key, keys.secret, keys.redirect);
   // possible patch for googleapis 23.0.0 missing .setCredentials bug
   // see https://github.com/google/google-api-nodejs-client/issues/869
@@ -399,10 +399,10 @@ function decoratedGoogleDrive(googleapis, request, keys, tokens, salt) {
   } else {
     auth.credentials = tokens;
   }
-  const drive = googleapis.drive({ version: 'v3', auth });
+  const drive = google.drive({ version: 'v3', auth });
   if (typeof(drive) !== 'object')
     throw Boom.badImplementation("drive is not an object, got: " + typeof(drive));
-  return decorate(drive, auth, request, salt);
+  return decorate({drive, auth, axios, salt});
 }
 
 decoratedGoogleDrive.decorate = decorate;

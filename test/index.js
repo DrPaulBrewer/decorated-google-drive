@@ -8,7 +8,7 @@
 const assert = require('assert');
 require('should');
 const {google} = require('googleapis');
-const request = require('request');
+const axios = require('axios');
 const fs = require('fs');
 const str = require('string-to-stream');
 const Boom = require('boom');
@@ -36,7 +36,7 @@ describe('decorated-google-drive:', function () {
   describe(' initializing ', function () {
     it('should not throw an error', function () {
       function init() {
-        drive = driveZ(google, request, keys, tokens, salt);
+        drive = driveZ({google, axios, keys, tokens, salt});
       }
       init.should.not.throw();
     });
