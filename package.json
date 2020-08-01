@@ -1,6 +1,6 @@
 {
   "name": "decorated-google-drive",
-  "version": "5.4.0",
+  "version": "6.0.0",
   "description": "decorate googleapi's Google Drive[tm] client with some useful extensions",
   "main": "index.js",
   "scripts": {
